@@ -1,0 +1,37 @@
+# Database: NOT provisioned here on purpose. Render's free Postgres now
+# auto-deletes after 30 days unless upgraded — a dealbreaker for a
+# season-long app. Use Supabase's free Postgres instead (no expiry; it only
+# pauses after 7 days of zero activity, and the GitHub Actions workflow in
+# .github/workflows/refresh.yml pings the backend every 30 minutes, which
+# in turn touches the database, so it never goes quiet enough to pause).
+#
+# Scheduled refresh also does NOT use a Render Cron Job — Render removed
+# free cron (min $1/month now). Instead, .github/workflows/refresh.yml
+# (a free GitHub Actions scheduled workflow) hits the /api/cron/refresh
+# endpoint below every 30 minutes, which also conveniently keeps this free
+# web service from spinning down idle.
+#
+# After this Blueprint deploys, go to the web service's Environment tab
+# and paste your Supabase connection string into DATABASE_URL, and set
+# your own value for CRON_SECRET (then add that same value as a GitHub
+# Actions secret in your repo — see the README).
+
+services:
+  - type: web
+    name: fpl-league-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_SETUP_KEY
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
