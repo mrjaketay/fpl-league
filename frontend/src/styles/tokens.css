@@ -1,23 +1,28 @@
 :root {
-  /* Color — floodlit pitch at night, not the generic near-black+acid-green combo:
-     a deep green-black pitch tone, chalk paper for cards, amber scoreboard accent,
-     red-card red reserved for "villain" style awards (Donkey, Sieve, Villain). */
-  --pitch-black: #0d1a13;
-  --pitch-green: #123524;
-  --chalk: #eef1e6;
-  --chalk-dim: #c9cfc0;
-  --amber: #ffb627;
-  --red-card: #e2483d;
-  --line: rgba(238, 241, 230, 0.14);
+  /* Color — leans into FPL's own brand trio (deep purple, green, cyan)
+     plus a hot pink for "villain"/negative awards, instead of a generic
+     dark theme. This is deliberately close to the game's own identity
+     so the site feels like part of the FPL universe, not a random tool. */
+  --purple-deep: #1c0021;
+  --purple: #37003c;
+  --purple-light: #4f0057;
+  --green: #00ff85;
+  --green-dim: #05c96b;
+  --cyan: #04f5ff;
+  --pink: #ff2882;
+  --white: #f6f6fa;
+  --grey: #a89bb0;
+  --line: rgba(246, 246, 250, 0.12);
 
-  /* Type — Archivo Black for headlines (bold, terrace-banner energy),
-     Archivo for body copy, Space Mono for anything that reads like a
-     scoreboard digit: scores, ranks, gameweek numbers. */
-  --font-display: 'Archivo Black', 'Archivo', sans-serif;
-  --font-body: 'Archivo', system-ui, sans-serif;
+  /* Type — Poppins for headings (rounded, confident, matches FPL's
+     friendly-but-bold app tone), Inter for body copy, Space Mono for
+     anything scoreboard-like: scores, ranks, gameweek numbers. */
+  --font-display: 'Poppins', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'Space Mono', monospace;
 
-  --radius: 6px;
+  --radius: 10px;
+  --radius-sm: 6px;
 }
 
 * { box-sizing: border-box; }
@@ -25,48 +30,106 @@
 html, body, #root {
   margin: 0;
   min-height: 100%;
-  background: var(--pitch-black);
-  color: var(--chalk);
+  background: var(--purple-deep);
+  color: var(--white);
   font-family: var(--font-body);
 }
 
 body {
   background-image:
-    linear-gradient(180deg, var(--pitch-black) 0%, var(--pitch-green) 140%);
+    radial-gradient(circle at 10% -10%, var(--purple-light) 0%, transparent 45%),
+    radial-gradient(circle at 90% 0%, #2a0030 0%, transparent 50%),
+    linear-gradient(180deg, var(--purple-deep) 0%, var(--purple-deep) 100%);
   background-attachment: fixed;
 }
 
-h1, h2, h3 {
-  font-family: var(--font-display);
-  letter-spacing: 0.01em;
-  margin: 0;
-}
-
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; margin: 0; }
 .mono { font-family: var(--font-mono); }
 
 .card {
-  background: rgba(238, 241, 230, 0.04);
+  background: rgba(246, 246, 250, 0.05);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 1.25rem;
+  padding: 1.5rem;
+  backdrop-filter: blur(6px);
+}
+
+.card--hero {
+  background: linear-gradient(135deg, var(--purple-light) 0%, var(--purple) 100%);
+  border: 1px solid rgba(0, 255, 133, 0.25);
 }
 
 .pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  color: var(--chalk-dim);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
+.pill--green { color: var(--purple-deep); background: var(--green); }
+.pill--cyan { color: var(--purple-deep); background: var(--cyan); }
+.pill--pink { color: var(--white); background: var(--pink); }
+.pill--outline { color: var(--grey); border: 1px solid var(--line); background: transparent; }
 
-.pill--amber { color: var(--pitch-black); background: var(--amber); border-color: var(--amber); }
-.pill--red { color: var(--chalk); background: var(--red-card); border-color: var(--red-card); }
+.btn {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: transform 0.08s ease, opacity 0.15s ease;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn--primary { background: var(--green); color: var(--purple-deep); }
+.btn--ghost { background: transparent; color: var(--white); border: 1px solid var(--line); }
 
-a { color: var(--amber); }
+input, select {
+  font-family: var(--font-mono);
+  background: rgba(0,0,0,0.25);
+  color: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+}
+input:focus, select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+
+a { color: var(--cyan); }
 
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); }
-th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--chalk-dim); }
+th, td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--grey); }
 td.num { font-family: var(--font-mono); }
+tr:hover td { background: rgba(246, 246, 250, 0.03); }
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.rank-badge--gold { background: #ffd23f; color: var(--purple-deep); }
+.rank-badge--silver { background: #d9d9e3; color: var(--purple-deep); }
+.rank-badge--bronze { background: #cd8a4f; color: var(--purple-deep); }
+.rank-badge--plain { background: rgba(246,246,250,0.08); color: var(--grey); }
+
+.stat-tile {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+.stat-tile .label { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--grey); }
+.stat-tile .value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }

@@ -21,26 +21,13 @@ export default function Login() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 360 }}>
-      <h2 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Admin Login</h2>
+    <div className="card" style={{ maxWidth: 360, margin: '2rem auto' }}>
+      <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem' }}>Admin Login</h2>
       <div onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.75rem' }}>
-        <input
-          type="email" placeholder="Email" value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 4, padding: '0.5rem', color: 'var(--chalk)' }}
-        />
-        <input
-          type="password" placeholder="Password" value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 4, padding: '0.5rem', color: 'var(--chalk)' }}
-        />
-        {error && <p className="mono pill pill--red">{error}</p>}
-        <button
-          onClick={handleSubmit}
-          style={{ background: 'var(--amber)', border: 'none', borderRadius: 4, padding: '0.6rem', fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
-        >
-          Log in
-        </button>
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        {error && <p className="pill pill--pink">{error}</p>}
+        <button className="btn btn--primary" onClick={handleSubmit}>Log in</button>
       </div>
     </div>
   );

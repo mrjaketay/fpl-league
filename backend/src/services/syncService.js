@@ -25,6 +25,15 @@ async function upsertManagers(standingsResults) {
   }
 }
 
+async function storeLeagueName(leagueInfo) {
+  if (!leagueInfo?.name) return;
+  await query(
+    `INSERT INTO league_settings (key, value) VALUES ('league_name', $1)
+     ON CONFLICT (key) DO UPDATE SET value = $1`,
+    [JSON.stringify(leagueInfo.name)]
+  );
+}
+
 // Sums each starting-XI player's contribution (points * multiplier) into
 // GK+DEF / MID / FWD buckets, using the live gameweek data for actual points.
 function computePositionSums(picks, liveElements, bootstrap) {
@@ -46,8 +55,9 @@ function computePositionSums(picks, liveElements, bootstrap) {
 // a row per manager in gameweek_stats. Safe to re-run — upserts on conflict.
 export async function syncGameweek(leagueId, gameweek) {
   const bootstrap = await fetchBootstrap();
-  const { results } = await fetchLeagueStandings(leagueId);
+  const { league, results } = await fetchLeagueStandings(leagueId);
   await upsertManagers(results);
+  await storeLeagueName(league);
 
   const live = await fetchEventLive(gameweek);
 

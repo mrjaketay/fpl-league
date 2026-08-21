@@ -22,6 +22,7 @@ async function request(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
+  info: () => request('/api/league/info'),
   standings: () => request('/api/league/standings'),
   form: () => request('/api/league/form'),
   gameweekStats: (gw: number) => request(`/api/league/gameweek/${gw}`),
@@ -30,6 +31,8 @@ export const api = {
   quarterlyAwards: (quarter: number) => request(`/api/league/awards/quarterly/${quarter}`),
   h2hGameweek: (gw: number) => request(`/api/league/h2h/gameweek/${gw}`),
   h2hTable: () => request('/api/league/h2h/table'),
+  captainStats: (gw: number) => request(`/api/league/stats/captains/${gw}`),
+  chipStats: () => request('/api/league/stats/chips'),
 
   login: (email: string, password: string) =>
     request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
@@ -43,6 +46,9 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ startGameweek, totalGameweeks }),
     }),
+  getSettings: () => request('/api/admin/settings'),
+  updateSetting: (key: string, value: unknown) =>
+    request(`/api/admin/settings/${key}`, { method: 'PUT', body: JSON.stringify({ value }) }),
 };
 
 export function setToken(token: string) {

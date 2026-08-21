@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/pool.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+import { fetchBootstrap } from '../services/fplApi.js';
 
 export const leagueRouter = Router();
 
@@ -116,5 +117,60 @@ leagueRouter.get('/h2h/table', asyncHandler(async (_req, res) => {
     GROUP BY m.entry_id, m.manager_name, m.team_name
     ORDER BY wins DESC
   `);
+  res.json(rows);
+}));
+
+// League name + basic info, for display in the header.
+leagueRouter.get('/info', asyncHandler(async (_req, res) => {
+  const { rows } = await query("SELECT value FROM league_settings WHERE key = 'league_name'");
+  const { rows: managerCount } = await query('SELECT COUNT(*) FROM managers WHERE active = true');
+  res.json({
+    name: rows[0]?.value ?? 'My Mini League',
+    managerCount: Number(managerCount[0].count),
+  });
+}));
+
+// Most-captained players for a given gameweek — who the league backed,
+// and how it paid off for them.
+leagueRouter.get('/stats/captains/:gw', asyncHandler(async (req, res) => {
+  const { rows } = await query(
+    `SELECT gs.captain_element_id, gs.captain_points, m.manager_name
+     FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+     WHERE gameweek = $1 AND captain_element_id IS NOT NULL`,
+    [req.params.gw]
+  );
+  if (rows.length === 0) return res.json([]);
+
+  const bootstrap = await fetchBootstrap();
+  const byPlayer = new Map();
+  for (const r of rows) {
+    const player = bootstrap.elements.find((e) => e.id === r.captain_element_id);
+    const key = r.captain_element_id;
+    if (!byPlayer.has(key)) {
+      byPlayer.set(key, {
+        element_id: key,
+        player_name: player ? `${player.first_name} ${player.second_name}`.trim() : `Player #${key}`,
+        web_name: player?.web_name ?? `#${key}`,
+        points: r.captain_points,
+        count: 0,
+        managers: [],
+      });
+    }
+    const entry = byPlayer.get(key);
+    entry.count += 1;
+    entry.managers.push(r.manager_name);
+  }
+  const result = Array.from(byPlayer.values()).sort((a, b) => b.count - a.count);
+  res.json(result);
+}));
+
+// Chip usage across the league — who's played what, and when.
+leagueRouter.get('/stats/chips', asyncHandler(async (_req, res) => {
+  const { rows } = await query(
+    `SELECT gs.gameweek, gs.chip_played, m.manager_name, m.team_name
+     FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+     WHERE chip_played IS NOT NULL
+     ORDER BY gs.gameweek ASC`
+  );
   res.json(rows);
 }));

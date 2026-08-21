@@ -82,5 +82,6 @@ INSERT INTO league_settings (key, value) VALUES
   ('fpl_league_id', '1154202'),
   ('hall_of_fame_threshold', '100'),
   ('season_total_gameweeks', '38'),
-  ('quarter_boundaries', '[[1,9],[10,19],[20,28],[29,38]]')
+  ('quarter_boundaries', '[[1,9],[10,19],[20,29],[30,38]]'),
+  ('league_name', '"My Mini League"')
 ON CONFLICT (key) DO NOTHING;

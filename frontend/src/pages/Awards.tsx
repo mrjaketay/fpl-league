@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 
-const LABELS: Record<string, { label: string; tone: 'amber' | 'red' | 'plain' }> = {
-  manager_of_week: { label: 'Manager of the Week', tone: 'amber' },
-  donkey_of_week: { label: 'Donkey of the Week', tone: 'red' },
-  hall_of_fame: { label: 'Hall of Fame (100+, no chip)', tone: 'amber' },
-  captains_curse: { label: "Captain's Curse", tone: 'red' },
-  bench_bandit: { label: 'Bench Bandit', tone: 'plain' },
-  transfer_villain: { label: 'Transfer Villain', tone: 'red' },
-  the_wall: { label: 'The Wall (best defense)', tone: 'amber' },
-  the_sieve: { label: 'The Sieve (worst defense)', tone: 'red' },
+const LABELS: Record<string, { label: string; tone: 'green' | 'pink' | 'cyan' | 'outline'; emoji: string }> = {
+  manager_of_week: { label: 'Manager of the Week', tone: 'green', emoji: '🏆' },
+  donkey_of_week: { label: 'Donkey of the Week', tone: 'pink', emoji: '🐴' },
+  hall_of_fame: { label: 'Hall of Fame (100+, no chip)', tone: 'cyan', emoji: '⭐' },
+  captains_curse: { label: "Captain's Curse", tone: 'pink', emoji: '💀' },
+  bench_bandit: { label: 'Bench Bandit', tone: 'outline', emoji: '🪑' },
+  transfer_villain: { label: 'Transfer Villain', tone: 'pink', emoji: '🔻' },
+  the_wall: { label: 'The Wall (best defense)', tone: 'green', emoji: '🧱' },
+  the_sieve: { label: 'The Sieve (worst defense)', tone: 'pink', emoji: '🕳️' },
 };
 
 type Award = {
@@ -28,6 +28,7 @@ export default function Awards() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     api.gameweekAwards(gw).then(setAwards).catch((e) => setError(e.message));
   }, [gw]);
 
@@ -35,55 +36,91 @@ export default function Awards() {
     api.seasonTally().then(setTally).catch(() => {});
   }, []);
 
+  const motw = awards.find((a) => a.award_type === 'manager_of_week');
+  const dotw = awards.find((a) => a.award_type === 'donkey_of_week');
+  const rest = awards.filter((a) => a.award_type !== 'manager_of_week' && a.award_type !== 'donkey_of_week');
+
   return (
-    <div style={{ display: 'grid', gap: '1.5rem' }}>
-      <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.1rem' }}>Gameweek</h2>
-          <input
-            type="number"
-            min={1}
-            max={38}
-            value={gw}
-            onChange={(e) => setGw(Number(e.target.value))}
-            className="mono"
-            style={{ width: 60, background: 'transparent', color: 'var(--chalk)', border: '1px solid var(--line)', borderRadius: 4, padding: '0.3rem 0.5rem' }}
-          />
-        </div>
-
-        {error && <p className="mono pill pill--red">{error}</p>}
-        {awards.length === 0 && !error && <p style={{ color: 'var(--chalk-dim)' }}>No awards computed for this gameweek yet.</p>}
-
-        <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {awards.map((a) => {
-            const meta = LABELS[a.award_type] ?? { label: a.award_type, tone: 'plain' };
-            return (
-              <div key={`${a.award_type}-${a.entry_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '0.6rem' }}>
-                <div>
-                  <span className={`pill ${meta.tone === 'amber' ? 'pill--amber' : meta.tone === 'red' ? 'pill--red' : ''}`}>{meta.label}</span>
-                  <div style={{ marginTop: '0.4rem' }}>{a.manager_name} <span style={{ color: 'var(--chalk-dim)' }}>({a.team_name})</span></div>
-                </div>
-                <div className="mono" style={{ fontSize: '1.2rem' }}>{a.value}</div>
-              </div>
-            );
-          })}
-        </div>
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <span className="mono" style={{ color: 'var(--grey)', fontSize: '0.8rem' }}>GAMEWEEK</span>
+        <input type="number" min={1} max={38} value={gw} onChange={(e) => setGw(Number(e.target.value))} style={{ width: 64 }} />
       </div>
 
+      {error && <p className="pill pill--pink">{error}</p>}
+      {awards.length === 0 && !error && (
+        <div className="card" style={{ textAlign: 'center', color: 'var(--grey)', padding: '2rem' }}>
+          No awards computed for GW{gw} yet.
+        </div>
+      )}
+
+      {(motw || dotw) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          {motw && (
+            <div className="card card--hero">
+              <span className="pill pill--green">🏆 Manager of the Week</span>
+              <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{motw.manager_name}</h3>
+              <span style={{ color: 'var(--grey)' }}>{motw.team_name}</span>
+              <div className="mono" style={{ fontSize: '1.8rem', color: 'var(--green)', marginTop: '0.5rem' }}>{motw.value} pts</div>
+            </div>
+          )}
+          {dotw && (
+            <div className="card" style={{ border: '1px solid rgba(255,40,130,0.3)' }}>
+              <span className="pill pill--pink">🐴 Donkey of the Week</span>
+              <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{dotw.manager_name}</h3>
+              <span style={{ color: 'var(--grey)' }}>{dotw.team_name}</span>
+              <div className="mono" style={{ fontSize: '1.8rem', color: 'var(--pink)', marginTop: '0.5rem' }}>
+                {dotw.value} pts
+                {dotw.details?.raw_points != null && (
+                  <span style={{ fontSize: '0.9rem', color: 'var(--grey)' }}> ({dotw.details.raw_points} before hit)</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {rest.length > 0 && (
+        <div className="card">
+          <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>OTHER AWARDS THIS WEEK</h3>
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {rest.map((a) => {
+              const meta = LABELS[a.award_type] ?? { label: a.award_type, tone: 'outline' as const, emoji: '🎖️' };
+              return (
+                <div key={`${a.award_type}-${a.entry_id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '0.6rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>{meta.emoji}</span>
+                    <div>
+                      <span className={`pill pill--${meta.tone}`}>{meta.label}</span>
+                      <div style={{ marginTop: '0.3rem' }}>{a.manager_name} <span style={{ color: 'var(--grey)' }}>({a.team_name})</span></div>
+                    </div>
+                  </div>
+                  <div className="mono" style={{ fontSize: '1.1rem' }}>{a.value}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="card">
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Trophy Cabinet</h2>
-        <table>
-          <thead><tr><th>Manager</th><th>Award</th><th>Wins</th></tr></thead>
-          <tbody>
-            {tally.map((t, i) => (
-              <tr key={i}>
-                <td>{t.manager_name}</td>
-                <td style={{ color: 'var(--chalk-dim)' }}>{LABELS[t.award_type]?.label ?? t.award_type}</td>
-                <td className="num">{t.wins}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>TROPHY CABINET</h3>
+        {tally.length === 0 ? (
+          <p style={{ color: 'var(--grey)' }}>No awards handed out yet this season.</p>
+        ) : (
+          <table>
+            <thead><tr><th>Manager</th><th>Award</th><th>Wins</th></tr></thead>
+            <tbody>
+              {tally.map((t, i) => (
+                <tr key={i}>
+                  <td>{t.manager_name}</td>
+                  <td style={{ color: 'var(--grey)' }}>{LABELS[t.award_type]?.label ?? t.award_type}</td>
+                  <td className="num">{t.wins}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
