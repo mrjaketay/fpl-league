@@ -10,20 +10,12 @@ import { fetchBootstrap, currentEventId } from '../services/fplApi.js';
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
 
-// Manually trigger a full sync + award recompute for a gameweek.
-// Also runs automatically via the GitHub Actions scheduled workflow
-// (see .github/workflows/refresh.yml).
-adminRouter.post('/sync/:gw', asyncHandler(async (req, res) => {
-  const gw = Number(req.params.gw);
-  const settings = await query('SELECT value FROM league_settings WHERE key = $1', ['fpl_league_id']);
-  const leagueId = settings.rows[0].value;
-
-  const syncResult = await syncGameweek(leagueId, gw);
-  const awardsResult = await recomputeGameweekAwards(gw);
-  const h2hResult = await settleH2H(gw);
-
-  res.json({ syncResult, awardsResult, h2hResult });
-}));
+// IMPORTANT: '/sync/current' must be registered BEFORE '/sync/:gw'.
+// Express matches routes in registration order, so if the wildcard
+// ':gw' route came first, a request to /sync/current would match IT
+// instead, treating the literal word "current" as the gameweek number
+// (Number("current") = NaN), which is exactly the bug that caused the
+// "event/NaN/live" 404 you hit.
 
 // Convenience: sync whatever the current live/most-recent gameweek is.
 adminRouter.post('/sync/current', asyncHandler(async (_req, res) => {
@@ -39,6 +31,25 @@ adminRouter.post('/sync/current', asyncHandler(async (_req, res) => {
   const h2hResult = await settleH2H(gw);
 
   res.json({ gameweek: gw, syncResult, awardsResult, h2hResult });
+}));
+
+// Manually trigger a full sync + award recompute for a specific gameweek.
+// Also runs automatically via the GitHub Actions scheduled workflow
+// (see .github/workflows/refresh.yml).
+adminRouter.post('/sync/:gw', asyncHandler(async (req, res) => {
+  const gw = Number(req.params.gw);
+  if (!Number.isInteger(gw) || gw < 1) {
+    return res.status(400).json({ error: `Invalid gameweek: ${req.params.gw}` });
+  }
+
+  const settings = await query('SELECT value FROM league_settings WHERE key = $1', ['fpl_league_id']);
+  const leagueId = settings.rows[0].value;
+
+  const syncResult = await syncGameweek(leagueId, gw);
+  const awardsResult = await recomputeGameweekAwards(gw);
+  const h2hResult = await settleH2H(gw);
+
+  res.json({ syncResult, awardsResult, h2hResult });
 }));
 
 adminRouter.post('/awards/quarterly/:quarter', asyncHandler(async (req, res) => {
