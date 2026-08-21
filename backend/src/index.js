@@ -21,7 +21,7 @@ app.use('/api/admin', adminRouter);
 // keeps data fresh AND keeps the free web service from spinning down idle.
 // Protected by a shared secret, not admin login, since it's called
 // unattended on a timer.
-app.post('/api/cron/refresh', async (req, res) => {
+app.post('/api/cron/refresh', async (req, res, next) => {
   const key = req.header('X-Cron-Secret');
   if (!key || key !== process.env.CRON_SECRET) {
     return res.status(403).json({ error: 'Invalid cron secret' });
@@ -30,8 +30,31 @@ app.post('/api/cron/refresh', async (req, res) => {
     const result = await refreshCurrentGameweek();
     res.json({ ok: true, result });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    next(err);
   }
+});
+
+// 404 for anything that didn't match a route above.
+app.use((req, res) => {
+  res.status(404).json({ error: `No route: ${req.method} ${req.path}` });
+});
+
+// Global error handler — this is the fix for the 502 crashes. Every route
+// above either uses asyncHandler() or its own try/catch, so any error
+// ends up here instead of crashing the Node process. Always returns JSON,
+// never lets an unhandled rejection take the whole server down.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(`[error] ${req.method} ${req.path}:`, err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+  });
+});
+
+// Belt-and-braces: log anything that somehow still slips through as an
+// unhandled rejection, instead of letting Node kill the process over it.
+process.on('unhandledRejection', (err) => {
+  console.error('[unhandledRejection]', err);
 });
 
 const PORT = process.env.PORT || 4000;

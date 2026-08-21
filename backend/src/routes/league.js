@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { query } from '../db/pool.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
 export const leagueRouter = Router();
 
 // Season standings, derived from the latest gameweek's cumulative total.
-leagueRouter.get('/standings', async (_req, res) => {
+leagueRouter.get('/standings', asyncHandler(async (_req, res) => {
   const { rows } = await query(`
     SELECT DISTINCT ON (gs.entry_id)
       m.entry_id, m.manager_name, m.team_name,
@@ -15,10 +16,10 @@ leagueRouter.get('/standings', async (_req, res) => {
   `);
   rows.sort((a, b) => b.total_points_after - a.total_points_after);
   res.json(rows);
-});
+}));
 
 // Form table — last 4 gameweeks only.
-leagueRouter.get('/form', async (_req, res) => {
+leagueRouter.get('/form', asyncHandler(async (_req, res) => {
   const { rows } = await query(`
     SELECT entry_id, MAX(gameweek) AS through_gw
     FROM gameweek_stats GROUP BY entry_id LIMIT 1
@@ -34,10 +35,10 @@ leagueRouter.get('/form', async (_req, res) => {
     [from, latestGw]
   );
   res.json({ from, to: latestGw, table: form });
-});
+}));
 
 // All raw gameweek stats for one gameweek (used for admin review / debugging).
-leagueRouter.get('/gameweek/:gw', async (req, res) => {
+leagueRouter.get('/gameweek/:gw', asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT gs.*, m.manager_name, m.team_name
      FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
@@ -45,10 +46,10 @@ leagueRouter.get('/gameweek/:gw', async (req, res) => {
     [req.params.gw]
   );
   res.json(rows);
-});
+}));
 
 // Awards for a specific gameweek (Manager of the Week, Donkey of the Week, etc.)
-leagueRouter.get('/awards/gameweek/:gw', async (req, res) => {
+leagueRouter.get('/awards/gameweek/:gw', asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT a.*, m.manager_name, m.team_name
      FROM awards a JOIN managers m ON m.entry_id = a.entry_id
@@ -56,11 +57,11 @@ leagueRouter.get('/awards/gameweek/:gw', async (req, res) => {
     [req.params.gw]
   );
   res.json(rows);
-});
+}));
 
 // Season-long tally of how many times each manager has won each award —
 // good for a "trophy cabinet" view.
-leagueRouter.get('/awards/season-tally', async (_req, res) => {
+leagueRouter.get('/awards/season-tally', asyncHandler(async (_req, res) => {
   const { rows } = await query(`
     SELECT m.entry_id, m.manager_name, m.team_name, a.award_type, COUNT(*) AS wins
     FROM awards a JOIN managers m ON m.entry_id = a.entry_id
@@ -69,10 +70,10 @@ leagueRouter.get('/awards/season-tally', async (_req, res) => {
     ORDER BY wins DESC
   `);
   res.json(rows);
-});
+}));
 
 // Quarterly challenge results.
-leagueRouter.get('/awards/quarterly/:quarter', async (req, res) => {
+leagueRouter.get('/awards/quarterly/:quarter', asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT a.*, m.manager_name, m.team_name
      FROM awards a JOIN managers m ON m.entry_id = a.entry_id
@@ -80,10 +81,10 @@ leagueRouter.get('/awards/quarterly/:quarter', async (req, res) => {
     [req.params.quarter]
   );
   res.json(rows);
-});
+}));
 
 // H2H fixtures + results for a gameweek.
-leagueRouter.get('/h2h/gameweek/:gw', async (req, res) => {
+leagueRouter.get('/h2h/gameweek/:gw', asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT f.*, m1.manager_name AS manager_1_name, m2.manager_name AS manager_2_name,
             w.manager_name AS winner_name
@@ -95,11 +96,11 @@ leagueRouter.get('/h2h/gameweek/:gw', async (req, res) => {
     [req.params.gw]
   );
   res.json(rows);
-});
+}));
 
 // H2H season table — wins, draws, losses per manager. Only counts fixtures
 // that have been settled (i.e. that gameweek's stats have been synced).
-leagueRouter.get('/h2h/table', async (_req, res) => {
+leagueRouter.get('/h2h/table', asyncHandler(async (_req, res) => {
   const { rows } = await query(`
     WITH involved AS (
       SELECT entry_id_1 AS entry_id, winner_entry_id, entry_id_1, entry_id_2 FROM h2h_fixtures
@@ -116,4 +117,4 @@ leagueRouter.get('/h2h/table', async (_req, res) => {
     ORDER BY wins DESC
   `);
   res.json(rows);
-});
+}));
