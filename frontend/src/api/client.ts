@@ -33,6 +33,9 @@ export const api = {
   h2hTable: () => request('/api/league/h2h/table'),
   captainStats: (gw: number) => request(`/api/league/stats/captains/${gw}`),
   chipStats: () => request('/api/league/stats/chips'),
+  latestGameweek: () => request('/api/league/latest-gameweek'),
+  hallOfFame: () => request('/api/league/awards/hall-of-fame'),
+  longevity: () => request('/api/league/stats/longevity'),
 
   login: (email: string, password: string) =>
     request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),

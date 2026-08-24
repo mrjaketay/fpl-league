@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
+import Home from './pages/Home';
 import Standings from './pages/Standings';
 import Awards from './pages/Awards';
 import H2H from './pages/H2H';
@@ -17,6 +18,12 @@ const navStyle = ({ isActive }: { isActive: boolean }) => ({
   fontSize: '0.9rem',
 });
 
+const SUBHEADS = [
+  'Glory, banter, and bragging rights.',
+  'Where legends rise and donkeys are crowned.',
+  'Every gameweek, someone becomes a story.',
+];
+
 export default function App() {
   const [leagueName, setLeagueName] = useState<string | null>(null);
 
@@ -31,8 +38,10 @@ export default function App() {
     .join('')
     .toUpperCase();
 
+  const subhead = SUBHEADS[new Date().getDate() % SUBHEADS.length];
+
   return (
-    <div style={{ maxWidth: 1040, margin: '0 auto', padding: '1.5rem 1.25rem 3rem' }}>
+    <div style={{ maxWidth: 1080, margin: '0 auto', padding: '1.5rem 1.25rem 3rem' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
@@ -45,11 +54,12 @@ export default function App() {
           </div>
           <div>
             <h1 style={{ fontSize: '1.15rem', lineHeight: 1.1 }}>{leagueName || 'Loading league…'}</h1>
-            <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--grey)' }}>FPL MINI-LEAGUE HQ</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--grey)' }}>{subhead}</span>
           </div>
         </div>
         <nav style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
-          <NavLink to="/" style={navStyle} end>Standings</NavLink>
+          <NavLink to="/" style={navStyle} end>Home</NavLink>
+          <NavLink to="/standings" style={navStyle}>Standings</NavLink>
           <NavLink to="/awards" style={navStyle}>Awards</NavLink>
           <NavLink to="/h2h" style={navStyle}>H2H</NavLink>
           <NavLink to="/stats" style={navStyle}>League Stats</NavLink>
@@ -58,7 +68,8 @@ export default function App() {
       </header>
 
       <Routes>
-        <Route path="/" element={<Standings />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/standings" element={<Standings />} />
         <Route path="/awards" element={<Awards />} />
         <Route path="/h2h" element={<H2H />} />
         <Route path="/stats" element={<LeagueStats />} />

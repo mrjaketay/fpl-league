@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import ManagerModal from '../components/ManagerModal';
 
 type Row = {
   entry_id: number;
@@ -17,19 +18,27 @@ function RankBadge({ rank }: { rank: number }) {
 
 export default function Standings() {
   const [rows, setRows] = useState<Row[]>([]);
+  const [longevity, setLongevity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
     api.standings().then(setRows).catch((e) => setError(e.message)).finally(() => setLoading(false));
+    api.longevity().then(setLongevity).catch(() => {});
   }, []);
+
+  function openManager(row: Row) {
+    const longevityRow = longevity.find((l) => l.entry_id === row.entry_id);
+    setSelected({ ...row, ...longevityRow });
+  }
 
   if (loading) return <p className="mono" style={{ color: 'var(--grey)' }}>Loading standings…</p>;
   if (error) return <p className="pill pill--pink">{error}</p>;
 
   if (rows.length === 0) {
     return (
-      <div className="card card--hero" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+      <div className="card card--hero fade-in" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
         <h2 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>No gameweeks synced yet</h2>
         <p style={{ color: 'var(--grey)', maxWidth: 420, margin: '0 auto' }}>
           Once the current gameweek kicks off, standings, awards, and every
@@ -43,7 +52,7 @@ export default function Standings() {
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
-      <div className="card card--hero" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="card card--hero fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <span className="pill pill--green">League Leader</span>
           <h2 style={{ fontSize: '1.4rem', marginTop: '0.5rem' }}>{leader.manager_name}</h2>
@@ -55,7 +64,7 @@ export default function Standings() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card fade-in fade-in-1">
         <table>
           <thead>
             <tr>
@@ -70,7 +79,11 @@ export default function Standings() {
             {rows.map((r, i) => (
               <tr key={r.entry_id}>
                 <td><RankBadge rank={i + 1} /></td>
-                <td style={{ fontWeight: 600 }}>{r.manager_name}</td>
+                <td>
+                  <button onClick={() => openManager(r)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--white)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--line)' }}>
+                    {r.manager_name}
+                  </button>
+                </td>
                 <td style={{ color: 'var(--grey)' }}>{r.team_name}</td>
                 <td className="num" style={{ color: 'var(--green)', fontWeight: 700 }}>{r.total_points_after}</td>
                 <td className="num" style={{ color: 'var(--grey)' }}>{r.overall_rank?.toLocaleString()}</td>
@@ -79,6 +92,8 @@ export default function Standings() {
           </tbody>
         </table>
       </div>
+
+      {selected && <ManagerModal manager={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

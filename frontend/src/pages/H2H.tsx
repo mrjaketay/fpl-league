@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import GameweekSelect from '../components/GameweekSelect';
 
 export default function H2H() {
   const [gw, setGw] = useState(1);
@@ -16,10 +17,10 @@ export default function H2H() {
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
-      <div className="card">
+      <div className="card fade-in">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <span className="mono" style={{ color: 'var(--grey)', fontSize: '0.8rem' }}>GAMEWEEK</span>
-          <input type="number" min={1} max={38} value={gw} onChange={(e) => setGw(Number(e.target.value))} style={{ width: 64 }} />
+          <span className="field-label">Gameweek</span>
+          <GameweekSelect value={gw} onChange={setGw} />
         </div>
         {fixtures.length === 0 && (
           <p style={{ color: 'var(--grey)' }}>No fixtures yet — generate them once from Admin.</p>

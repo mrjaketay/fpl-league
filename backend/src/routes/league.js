@@ -174,3 +174,64 @@ leagueRouter.get('/stats/chips', asyncHandler(async (_req, res) => {
   );
   res.json(rows);
 }));
+
+// Highest gameweek we have any data for — used by the homepage to know
+// which gameweek's Manager/Donkey of the Week to feature.
+leagueRouter.get('/latest-gameweek', asyncHandler(async (_req, res) => {
+  const { rows } = await query('SELECT MAX(gameweek) AS latest FROM gameweek_stats');
+  res.json({ latest: rows[0]?.latest ?? null });
+}));
+
+// Every Hall of Fame entry all season, newest first.
+leagueRouter.get('/awards/hall-of-fame', asyncHandler(async (_req, res) => {
+  const { rows } = await query(
+    `SELECT a.*, m.manager_name, m.team_name
+     FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+     WHERE award_type = 'hall_of_fame'
+     ORDER BY gameweek DESC`
+  );
+  res.json(rows);
+}));
+
+// Longevity leaderboards: how many gameweeks (total, not necessarily
+// consecutive) each manager has spent in 1st, in the top 3, in last
+// place, and in the bottom 3 of the LEAGUE (not the global FPL rank).
+// Also included: Manager of the Week / Donkey of the Week win counts.
+leagueRouter.get('/stats/longevity', asyncHandler(async (_req, res) => {
+  const { rows } = await query(`
+    WITH ranked AS (
+      SELECT entry_id, gameweek, total_points_after,
+        RANK() OVER (PARTITION BY gameweek ORDER BY total_points_after DESC) AS league_rank,
+        COUNT(*) OVER (PARTITION BY gameweek) AS total_managers
+      FROM gameweek_stats
+    ),
+    position_counts AS (
+      SELECT entry_id,
+        COUNT(*) FILTER (WHERE league_rank = 1) AS weeks_in_1st,
+        COUNT(*) FILTER (WHERE league_rank <= 3) AS weeks_in_top3,
+        COUNT(*) FILTER (WHERE league_rank = total_managers) AS weeks_in_last,
+        COUNT(*) FILTER (WHERE league_rank > total_managers - 3) AS weeks_in_bottom3
+      FROM ranked
+      GROUP BY entry_id
+    ),
+    award_counts AS (
+      SELECT entry_id,
+        COUNT(*) FILTER (WHERE award_type = 'manager_of_week') AS motw_wins,
+        COUNT(*) FILTER (WHERE award_type = 'donkey_of_week') AS dotw_wins
+      FROM awards
+      WHERE gameweek IS NOT NULL
+      GROUP BY entry_id
+    )
+    SELECT m.entry_id, m.manager_name, m.team_name,
+      COALESCE(p.weeks_in_1st, 0) AS weeks_in_1st,
+      COALESCE(p.weeks_in_top3, 0) AS weeks_in_top3,
+      COALESCE(p.weeks_in_last, 0) AS weeks_in_last,
+      COALESCE(p.weeks_in_bottom3, 0) AS weeks_in_bottom3,
+      COALESCE(a.motw_wins, 0) AS motw_wins,
+      COALESCE(a.dotw_wins, 0) AS dotw_wins
+    FROM managers m
+    LEFT JOIN position_counts p ON p.entry_id = m.entry_id
+    LEFT JOIN award_counts a ON a.entry_id = m.entry_id
+  `);
+  res.json(rows);
+}));

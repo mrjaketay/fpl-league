@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import GameweekSelect from '../components/GameweekSelect';
 
 const LABELS: Record<string, { label: string; tone: 'green' | 'pink' | 'cyan' | 'outline'; emoji: string }> = {
   manager_of_week: { label: 'Manager of the Week', tone: 'green', emoji: '🏆' },
@@ -42,9 +43,11 @@ export default function Awards() {
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <span className="mono" style={{ color: 'var(--grey)', fontSize: '0.8rem' }}>GAMEWEEK</span>
-        <input type="number" min={1} max={38} value={gw} onChange={(e) => setGw(Number(e.target.value))} style={{ width: 64 }} />
+      <div className="card fade-in">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="field-label">Gameweek</span>
+          <GameweekSelect value={gw} onChange={setGw} />
+        </div>
       </div>
 
       {error && <p className="pill pill--pink">{error}</p>}
@@ -57,7 +60,7 @@ export default function Awards() {
       {(motw || dotw) && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {motw && (
-            <div className="card card--hero">
+            <div className="card card--hero fade-in fade-in-1">
               <span className="pill pill--green">🏆 Manager of the Week</span>
               <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{motw.manager_name}</h3>
               <span style={{ color: 'var(--grey)' }}>{motw.team_name}</span>
@@ -65,7 +68,7 @@ export default function Awards() {
             </div>
           )}
           {dotw && (
-            <div className="card" style={{ border: '1px solid rgba(255,40,130,0.3)' }}>
+            <div className="card fade-in fade-in-2" style={{ border: '1px solid rgba(255,40,130,0.3)' }}>
               <span className="pill pill--pink">🐴 Donkey of the Week</span>
               <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{dotw.manager_name}</h3>
               <span style={{ color: 'var(--grey)' }}>{dotw.team_name}</span>
