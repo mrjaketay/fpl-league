@@ -235,3 +235,48 @@ leagueRouter.get('/stats/longevity', asyncHandler(async (_req, res) => {
   `);
   res.json(rows);
 }));
+
+// Today's price risers/fallers, top 5 each — same underlying data FPL's
+// own price-changes page uses (cost_change_event on every player in
+// bootstrap-static). Not scoped to your league specifically, since price
+// changes are game-wide, same as the real FPL page.
+leagueRouter.get('/stats/price-changes', asyncHandler(async (_req, res) => {
+  const bootstrap = await fetchBootstrap();
+  const teamById = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]));
+
+  const changed = bootstrap.elements
+    .filter((e) => e.cost_change_event !== 0)
+    .map((e) => ({
+      web_name: e.web_name,
+      team: teamById.get(e.team) ?? '',
+      now_cost: e.now_cost / 10,
+      change: e.cost_change_event / 10,
+    }));
+
+  const risers = changed.filter((p) => p.change > 0).sort((a, b) => b.change - a.change).slice(0, 5);
+  const fallers = changed.filter((p) => p.change < 0).sort((a, b) => a.change - b.change).slice(0, 5);
+
+  res.json({ risers, fallers });
+}));
+
+// Today's price changes across the whole game (not league-specific) —
+// same underlying data as fantasy.premierleague.com/en/price-changes.
+// Top 5 risers and top 5 fallers, by today's price movement.
+leagueRouter.get('/price-changes', asyncHandler(async (_req, res) => {
+  const bootstrap = await fetchBootstrap();
+  const teamById = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]));
+
+  const withMovement = bootstrap.elements
+    .filter((e) => e.cost_change_event !== 0)
+    .map((e) => ({
+      web_name: e.web_name,
+      team: teamById.get(e.team) ?? '',
+      now_cost: e.now_cost / 10,
+      change: e.cost_change_event / 10,
+    }));
+
+  const risers = withMovement.filter((p) => p.change > 0).sort((a, b) => b.change - a.change).slice(0, 5);
+  const fallers = withMovement.filter((p) => p.change < 0).sort((a, b) => a.change - b.change).slice(0, 5);
+
+  res.json({ risers, fallers });
+}));

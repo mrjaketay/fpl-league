@@ -10,6 +10,7 @@ export default function Home() {
   const [hof, setHof] = useState<any[]>([]);
   const [standings, setStandings] = useState<any[]>([]);
   const [longevity, setLongevity] = useState<any[]>([]);
+  const [prices, setPrices] = useState<{ risers: any[]; fallers: any[] }>({ risers: [], fallers: [] });
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export default function Home() {
     api.hallOfFame().then(setHof).catch(() => {});
     api.standings().then(setStandings).catch(() => {});
     api.longevity().then(setLongevity).catch(() => {});
+    api.priceChanges().then(setPrices).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -106,6 +108,42 @@ export default function Home() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="card fade-in fade-in-3" style={{ marginTop: '1.5rem' }}>
+            <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)', marginBottom: '1rem' }}>💰 PRICE CHANGES TODAY</h3>
+            {prices.risers.length === 0 && prices.fallers.length === 0 ? (
+              <p style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No price changes yet today.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '1.25rem' }}>
+                {prices.risers.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--green)', fontWeight: 700 }}>RISERS</span>
+                    <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.5rem' }}>
+                      {prices.risers.map((p: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span>{p.web_name} <span style={{ color: 'var(--grey)' }}>({p.team})</span></span>
+                          <span className="mono" style={{ color: 'var(--green)' }}>£{p.now_cost.toFixed(1)}m ▲</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {prices.fallers.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--pink)', fontWeight: 700 }}>FALLERS</span>
+                    <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.5rem' }}>
+                      {prices.fallers.map((p: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span>{p.web_name} <span style={{ color: 'var(--grey)' }}>({p.team})</span></span>
+                          <span className="mono" style={{ color: 'var(--pink)' }}>£{p.now_cost.toFixed(1)}m ▼</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

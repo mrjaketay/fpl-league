@@ -36,6 +36,7 @@ export const api = {
   latestGameweek: () => request('/api/league/latest-gameweek'),
   hallOfFame: () => request('/api/league/awards/hall-of-fame'),
   longevity: () => request('/api/league/stats/longevity'),
+  priceChanges: () => request('/api/league/price-changes'),
 
   login: (email: string, password: string) =>
     request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
