@@ -65,32 +65,34 @@ export default function Standings() {
       </div>
 
       <div className="card fade-in fade-in-1">
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th>Manager</th>
-              <th>Team</th>
-              <th>Pts</th>
-              <th>Global Rank</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.entry_id}>
-                <td><RankBadge rank={i + 1} /></td>
-                <td>
-                  <button onClick={() => openManager(r)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--white)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--line)' }}>
-                    {r.manager_name}
-                  </button>
-                </td>
-                <td style={{ color: 'var(--grey)' }}>{r.team_name}</td>
-                <td className="num" style={{ color: 'var(--green)', fontWeight: 700 }}>{r.total_points_after}</td>
-                <td className="num" style={{ color: 'var(--grey)' }}>{r.overall_rank?.toLocaleString()}</td>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Manager</th>
+                <th>Team</th>
+                <th>Pts</th>
+                <th>Global Rank</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.entry_id}>
+                  <td><RankBadge rank={i + 1} /></td>
+                  <td>
+                    <button onClick={() => openManager(r)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--white)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--line)' }}>
+                      {r.manager_name}
+                    </button>
+                  </td>
+                  <td style={{ color: 'var(--grey)' }}>{r.team_name}</td>
+                  <td className="num" style={{ color: 'var(--green)', fontWeight: 700 }}>{r.total_points_after}</td>
+                  <td className="num" style={{ color: 'var(--grey)' }}>{r.overall_rank?.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {selected && <ManagerModal manager={selected} onClose={() => setSelected(null)} />}

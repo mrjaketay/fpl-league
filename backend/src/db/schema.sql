@@ -73,6 +73,20 @@ CREATE TABLE IF NOT EXISTS h2h_fixtures (
   UNIQUE (gameweek, entry_id_1, entry_id_2)
 );
 
+-- Custom "flyer" images admins upload for weekly awards (Manager of the
+-- Week, Donkey of the Week, Best Defense/Midfield/Attack), shown on the
+-- homepage instead of / alongside the generated poster design. One per
+-- (gameweek, award_type). Stored as base64 — fine at this scale (a
+-- handful of images per week, well within Supabase's free 500MB).
+CREATE TABLE IF NOT EXISTS award_flyers (
+  id SERIAL PRIMARY KEY,
+  gameweek INTEGER NOT NULL,
+  award_type TEXT NOT NULL, -- 'manager_of_week' | 'donkey_of_week' | 'the_wall' | 'midfield_king' | 'attack_king'
+  image_data TEXT NOT NULL, -- base64 data URL, e.g. "data:image/png;base64,...."
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (gameweek, award_type)
+);
+
 CREATE INDEX IF NOT EXISTS idx_gameweek_stats_gw ON gameweek_stats(gameweek);
 CREATE INDEX IF NOT EXISTS idx_awards_type_gw ON awards(award_type, gameweek);
 CREATE INDEX IF NOT EXISTS idx_h2h_gw ON h2h_fixtures(gameweek);

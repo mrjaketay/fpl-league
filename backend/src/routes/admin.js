@@ -77,3 +77,23 @@ adminRouter.get('/settings', asyncHandler(async (_req, res) => {
   const { rows } = await query('SELECT * FROM league_settings');
   res.json(rows);
 }));
+
+// Upload/replace a flyer image for a gameweek's award. Body: { gameweek,
+// award_type, image } where image is a base64 data URL from the browser.
+adminRouter.put('/flyers', asyncHandler(async (req, res) => {
+  const { gameweek, award_type, image } = req.body;
+  if (!gameweek || !award_type || !image) {
+    return res.status(400).json({ error: 'gameweek, award_type, and image are required' });
+  }
+  await query(
+    `INSERT INTO award_flyers (gameweek, award_type, image_data) VALUES ($1,$2,$3)
+     ON CONFLICT (gameweek, award_type) DO UPDATE SET image_data = $3, uploaded_at = now()`,
+    [gameweek, award_type, image]
+  );
+  res.json({ ok: true });
+}));
+
+adminRouter.delete('/flyers/:gw/:awardType', asyncHandler(async (req, res) => {
+  await query('DELETE FROM award_flyers WHERE gameweek = $1 AND award_type = $2', [req.params.gw, req.params.awardType]);
+  res.json({ ok: true });
+}));

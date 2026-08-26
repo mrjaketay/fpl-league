@@ -42,7 +42,7 @@ export default function H2H() {
 
       <div className="card">
         <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>SEASON H2H TABLE</h3>
-        <table>
+        <div className="table-scroll"><table>
           <thead><tr><th>Manager</th><th>Wins</th><th>Losses</th></tr></thead>
           <tbody>
             {table.map((t) => (
@@ -53,7 +53,7 @@ export default function H2H() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

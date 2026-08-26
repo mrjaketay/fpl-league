@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ManagerModal from '../components/ManagerModal';
+import AwardPoster from '../components/AwardPoster';
+
+const WEEKLY_AWARD_META: Record<string, { title: string; emoji: string; tone: 'green' | 'pink' | 'cyan' }> = {
+  manager_of_week: { title: 'Manager of the Week', emoji: '🏆', tone: 'green' },
+  donkey_of_week: { title: 'Donkey of the Week', emoji: '🐴', tone: 'pink' },
+  the_wall: { title: 'Best Defense', emoji: '🧱', tone: 'cyan' },
+  midfield_king: { title: 'Best Midfield', emoji: '🎯', tone: 'cyan' },
+  attack_king: { title: 'Best Attack', emoji: '⚡', tone: 'cyan' },
+};
 
 export default function Home() {
   const [latestGw, setLatestGw] = useState<number | null>(null);
-  const [motw, setMotw] = useState<any>(null);
-  const [dotw, setDotw] = useState<any>(null);
+  const [awards, setAwards] = useState<any[]>([]);
+  const [flyers, setFlyers] = useState<Record<string, string>>({});
   const [hof, setHof] = useState<any[]>([]);
   const [standings, setStandings] = useState<any[]>([]);
   const [longevity, setLongevity] = useState<any[]>([]);
@@ -23,10 +32,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!latestGw) return;
-    api.gameweekAwards(latestGw).then((awards: any[]) => {
-      setMotw(awards.find((a) => a.award_type === 'manager_of_week') ?? null);
-      setDotw(awards.find((a) => a.award_type === 'donkey_of_week') ?? null);
-    }).catch(() => {});
+    api.gameweekAwards(latestGw).then(setAwards).catch(() => {});
+    api.flyers(latestGw).then(setFlyers).catch(() => {});
   }, [latestGw]);
 
   function openManager(entryId: number) {
@@ -36,6 +43,9 @@ export default function Home() {
   }
 
   const noDataYet = standings.length === 0;
+  const featured = Object.keys(WEEKLY_AWARD_META)
+    .map((type) => ({ type, award: awards.find((a) => a.award_type === type) }))
+    .filter((f) => f.award);
 
   return (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -51,27 +61,25 @@ export default function Home() {
       )}
 
       {!noDataYet && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="two-col-2-1">
           <div style={{ display: 'grid', gap: '1.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {motw && (
-                <div className="poster poster--green fade-in fade-in-1">
-                  <div className="poster-emoji">🏆</div>
-                  <div className="poster-title">Manager of the Week</div>
-                  <div className="poster-name">{motw.manager_name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.85rem' }}>{motw.team_name}</div>
-                  <div className="poster-value">{motw.value} pts</div>
-                </div>
-              )}
-              {dotw && (
-                <div className="poster poster--pink fade-in fade-in-2">
-                  <div className="poster-emoji">🐴</div>
-                  <div className="poster-title">Donkey of the Week</div>
-                  <div className="poster-name">{dotw.manager_name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.85rem' }}>{dotw.team_name}</div>
-                  <div className="poster-value">{dotw.value} pts</div>
-                </div>
-              )}
+            <div className="two-col-even">
+              {featured.map(({ type, award }, i) => {
+                const meta = WEEKLY_AWARD_META[type];
+                return (
+                  <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
+                    <AwardPoster
+                      tone={meta.tone}
+                      emoji={meta.emoji}
+                      title={meta.title}
+                      managerName={award.manager_name}
+                      teamName={award.team_name}
+                      value={`${award.value} pts`}
+                      flyerImage={flyers[type]}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
             <div className="card fade-in fade-in-3">
@@ -94,56 +102,58 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="card fade-in fade-in-2">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)' }}>STANDINGS</h3>
-              <Link to="/standings" style={{ fontSize: '0.8rem' }}>Full table →</Link>
-            </div>
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              {standings.slice(0, 8).map((s, i) => (
-                <button key={s.entry_id} onClick={() => openManager(s.entry_id)} style={{ ...rowBtn, background: i === 0 ? 'rgba(0,255,133,0.08)' : 'transparent' }}>
-                  <span className="mono" style={{ color: 'var(--grey)', width: 20 }}>{i + 1}</span>
-                  <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{s.manager_name}</span>
-                  <span className="mono" style={{ color: 'var(--green)' }}>{s.total_points_after}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="card fade-in fade-in-3" style={{ marginTop: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)', marginBottom: '1rem' }}>💰 PRICE CHANGES TODAY</h3>
-            {prices.risers.length === 0 && prices.fallers.length === 0 ? (
-              <p style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No price changes yet today.</p>
-            ) : (
-              <div style={{ display: 'grid', gap: '1.25rem' }}>
-                {prices.risers.length > 0 && (
-                  <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--green)', fontWeight: 700 }}>RISERS</span>
-                    <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.5rem' }}>
-                      {prices.risers.map((p: any, i: number) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                          <span>{p.web_name} <span style={{ color: 'var(--grey)' }}>({p.team})</span></span>
-                          <span className="mono" style={{ color: 'var(--green)' }}>£{p.now_cost.toFixed(1)}m ▲</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {prices.fallers.length > 0 && (
-                  <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--pink)', fontWeight: 700 }}>FALLERS</span>
-                    <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.5rem' }}>
-                      {prices.fallers.map((p: any, i: number) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                          <span>{p.web_name} <span style={{ color: 'var(--grey)' }}>({p.team})</span></span>
-                          <span className="mono" style={{ color: 'var(--pink)' }}>£{p.now_cost.toFixed(1)}m ▼</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div className="card fade-in fade-in-2">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)' }}>STANDINGS</h3>
+                <Link to="/standings" style={{ fontSize: '0.8rem' }}>Full table →</Link>
               </div>
-            )}
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {standings.slice(0, 8).map((s, i) => (
+                  <button key={s.entry_id} onClick={() => openManager(s.entry_id)} style={{ ...rowBtn, background: i === 0 ? 'rgba(0,255,133,0.08)' : 'transparent' }}>
+                    <span className="mono" style={{ color: 'var(--grey)', width: 20 }}>{i + 1}</span>
+                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{s.manager_name}</span>
+                    <span className="mono" style={{ color: 'var(--green)' }}>{s.total_points_after}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card fade-in fade-in-3">
+              <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)', marginBottom: '1rem' }}>💰 PRICE CHANGES (SEASON)</h3>
+              {prices.risers.length === 0 && prices.fallers.length === 0 ? (
+                <p style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No price changes yet this season.</p>
+              ) : (
+                <div style={{ display: 'grid', gap: '1.25rem' }}>
+                  {prices.risers.length > 0 && (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--green)', fontWeight: 700 }}>TOP 5 RISERS</span>
+                      <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.5rem' }}>
+                        {prices.risers.map((p: any, i: number) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                            <span>{p.web_name} <span style={{ color: 'var(--grey)' }}>({p.team})</span></span>
+                            <span className="mono" style={{ color: 'var(--green)' }}>£{p.now_cost.toFixed(1)}m ▲</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {prices.fallers.length > 0 && (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--pink)', fontWeight: 700 }}>TOP 5 FALLERS</span>
+                      <div style={{ display: 'grid', gap: '0.4rem', marginTop: '0.5rem' }}>
+                        {prices.fallers.map((p: any, i: number) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                            <span>{p.web_name} <span style={{ color: 'var(--grey)' }}>({p.team})</span></span>
+                            <span className="mono" style={{ color: 'var(--pink)' }}>£{p.now_cost.toFixed(1)}m ▼</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

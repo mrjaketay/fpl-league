@@ -74,7 +74,7 @@ export default function LeagueStats() {
         <p style={{ color: 'var(--grey)', fontSize: '0.8rem', marginBottom: '1rem' }}>
           "Weeks" here means total gameweeks spent in that spot across the season — not necessarily in a row.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div className="two-col-even">
           {LEADERBOARDS.map(({ key, label, emoji }) => {
             const sorted = [...longevity].sort((a, b) => b[key] - a[key]);
             const top = sorted[0];
@@ -102,7 +102,7 @@ export default function LeagueStats() {
         {chips.length === 0 ? (
           <p style={{ color: 'var(--grey)' }}>No chips played yet this season.</p>
         ) : (
-          <table>
+          <div className="table-scroll"><table>
             <thead><tr><th>GW</th><th>Manager</th><th>Chip</th></tr></thead>
             <tbody>
               {chips.map((c, i) => (
@@ -113,7 +113,7 @@ export default function LeagueStats() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

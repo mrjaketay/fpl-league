@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import TeamModal from './TeamModal';
+
 type Manager = {
   entry_id: number;
   manager_name: string;
@@ -7,9 +10,23 @@ type Manager = {
   weeks_in_1st?: number;
   motw_wins?: number;
   dotw_wins?: number;
+  last_gameweek?: number;
 };
 
-export default function ManagerModal({ manager, onClose }: { manager: Manager; onClose: () => void }) {
+export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { manager: Manager; onClose: () => void; defaultGw?: number }) {
+  const [viewingTeam, setViewingTeam] = useState(false);
+
+  if (viewingTeam) {
+    return (
+      <TeamModal
+        entryId={manager.entry_id}
+        managerName={manager.manager_name}
+        defaultGw={manager.last_gameweek ?? defaultGw}
+        onClose={() => setViewingTeam(false)}
+      />
+    );
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
@@ -45,15 +62,9 @@ export default function ManagerModal({ manager, onClose }: { manager: Manager; o
         </div>
 
         <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1.5rem' }}>
-          <a
-            className="btn btn--primary"
-            style={{ textDecoration: 'none', textAlign: 'center', flex: 1 }}
-            href={`https://fantasy.premierleague.com/entry/${manager.entry_id}/history`}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <button className="btn btn--primary" style={{ flex: 1 }} onClick={() => setViewingTeam(true)}>
             View Team
-          </a>
+          </button>
           <button className="btn btn--ghost" onClick={onClose}>Close</button>
         </div>
       </div>

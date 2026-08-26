@@ -5,6 +5,23 @@ import GameweekSelect from '../components/GameweekSelect';
 
 type QuarterRange = [number, number];
 
+const FLYER_TYPES: { type: string; label: string }[] = [
+  { type: 'manager_of_week', label: 'Manager of the Week' },
+  { type: 'donkey_of_week', label: 'Donkey of the Week' },
+  { type: 'the_wall', label: 'Best Defense' },
+  { type: 'midfield_king', label: 'Best Midfield' },
+  { type: 'attack_king', label: 'Best Attack' },
+];
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function Admin() {
   const [log, setLog] = useState<string[]>([]);
   const [gw, setGw] = useState(1);
@@ -12,6 +29,44 @@ export default function Admin() {
   const [totalGw, setTotalGw] = useState(38);
   const [hofThreshold, setHofThreshold] = useState('100');
   const [quarters, setQuarters] = useState<QuarterRange[]>([[1, 9], [10, 19], [20, 29], [30, 38]]);
+  const [flyerGw, setFlyerGw] = useState(1);
+  const [flyerPreviews, setFlyerPreviews] = useState<Record<string, string>>({});
+  const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.flyers(flyerGw).then(setFlyerPreviews).catch(() => setFlyerPreviews({}));
+  }, [flyerGw]);
+
+  async function handleFlyerUpload(awardType: string, file: File) {
+    setFlyerBusy(awardType);
+    try {
+      const base64 = await fileToBase64(file);
+      await api.uploadFlyer(flyerGw, awardType, base64);
+      setFlyerPreviews((prev) => ({ ...prev, [awardType]: base64 }));
+      appendLog(`✓ Uploaded flyer for ${awardType} — GW${flyerGw}`);
+    } catch (err: any) {
+      appendLog(`✗ Flyer upload failed: ${err.message}`);
+    } finally {
+      setFlyerBusy(null);
+    }
+  }
+
+  async function handleFlyerDelete(awardType: string) {
+    setFlyerBusy(awardType);
+    try {
+      await api.deleteFlyer(flyerGw, awardType);
+      setFlyerPreviews((prev) => {
+        const next = { ...prev };
+        delete next[awardType];
+        return next;
+      });
+      appendLog(`✓ Removed flyer for ${awardType} — GW${flyerGw}`);
+    } catch (err: any) {
+      appendLog(`✗ Flyer removal failed: ${err.message}`);
+    } finally {
+      setFlyerBusy(null);
+    }
+  }
 
   useEffect(() => {
     if (!isLoggedIn()) return;
@@ -130,6 +185,47 @@ export default function Admin() {
           <button className="btn btn--ghost" style={{ marginTop: '0.75rem' }} onClick={() => run('Update quarter boundaries', () => api.updateSetting('quarter_boundaries', quarters))}>
             Save Quarter Boundaries
           </button>
+        </div>
+      </div>
+
+      <div className="card fade-in">
+        <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Weekly Award Flyers</h2>
+        <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+          Upload a custom graphic for any of the five weekly awards below — it replaces the plain
+          generated poster on the homepage for that gameweek. Stored permanently per gameweek, so past
+          weeks' flyers stay available if you come back later.
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <span className="field-label">Gameweek</span>
+          <GameweekSelect value={flyerGw} onChange={setFlyerGw} />
+        </div>
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {FLYER_TYPES.map(({ type, label }) => (
+            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {flyerPreviews[type] ? (
+                <img src={flyerPreviews[type]} alt={label} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: 8, border: '1px dashed var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', fontSize: '0.7rem' }}>
+                  none
+                </div>
+              )}
+              <span style={{ flex: 1, minWidth: 140 }}>{label}</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={flyerBusy === type}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFlyerUpload(type, file);
+                  e.target.value = '';
+                }}
+                style={{ fontSize: '0.8rem' }}
+              />
+              {flyerPreviews[type] && (
+                <button className="btn btn--ghost" disabled={flyerBusy === type} onClick={() => handleFlyerDelete(type)}>Remove</button>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 

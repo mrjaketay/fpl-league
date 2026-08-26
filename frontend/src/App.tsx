@@ -57,7 +57,7 @@ export default function App() {
             <span style={{ fontSize: '0.78rem', color: 'var(--grey)' }}>{subhead}</span>
           </div>
         </div>
-        <nav style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+        <nav style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', rowGap: '0.5rem' }}>
           <NavLink to="/" style={navStyle} end>Home</NavLink>
           <NavLink to="/standings" style={navStyle}>Standings</NavLink>
           <NavLink to="/awards" style={navStyle}>Awards</NavLink>

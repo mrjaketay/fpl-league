@@ -116,6 +116,34 @@ export async function recomputeGameweekAwards(gameweek) {
     stats.filter((s) => s.gk_def_points === minDef).map((s) => ({ entry_id: s.entry_id, value: minDef }))
   );
 
+  // Midfield King / Midfield Flop — best & worst combined midfield points
+  const maxMid = Math.max(...stats.map((s) => s.mid_points));
+  const minMid = Math.min(...stats.map((s) => s.mid_points));
+  await replaceAwards(
+    'midfield_king',
+    gameweek,
+    stats.filter((s) => s.mid_points === maxMid).map((s) => ({ entry_id: s.entry_id, value: maxMid }))
+  );
+  await replaceAwards(
+    'midfield_flop',
+    gameweek,
+    stats.filter((s) => s.mid_points === minMid).map((s) => ({ entry_id: s.entry_id, value: minMid }))
+  );
+
+  // Attack King / Attack Flop — best & worst combined forward points
+  const maxFwd = Math.max(...stats.map((s) => s.fwd_points));
+  const minFwd = Math.min(...stats.map((s) => s.fwd_points));
+  await replaceAwards(
+    'attack_king',
+    gameweek,
+    stats.filter((s) => s.fwd_points === maxFwd).map((s) => ({ entry_id: s.entry_id, value: maxFwd }))
+  );
+  await replaceAwards(
+    'attack_flop',
+    gameweek,
+    stats.filter((s) => s.fwd_points === minFwd).map((s) => ({ entry_id: s.entry_id, value: minFwd }))
+  );
+
   return { gameweek, computed: stats.length };
 }
 

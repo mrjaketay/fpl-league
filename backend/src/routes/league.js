@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/pool.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { fetchBootstrap } from '../services/fplApi.js';
+import { fetchBootstrap, fetchEntryPicks } from '../services/fplApi.js';
 
 export const leagueRouter = Router();
 
@@ -259,24 +259,72 @@ leagueRouter.get('/stats/price-changes', asyncHandler(async (_req, res) => {
   res.json({ risers, fallers });
 }));
 
-// Today's price changes across the whole game (not league-specific) —
-// same underlying data as fantasy.premierleague.com/en/price-changes.
-// Top 5 risers and top 5 fallers, by today's price movement.
+// Price changes — same underlying data as fantasy.premierleague.com/en/price-changes,
+// but using cumulative change since the season started (cost_change_start)
+// rather than just today's movement (cost_change_event). Early in the
+// season especially, very few players move price on any single day, so
+// "today only" often can't fill 5 risers/5 fallers — season-to-date
+// movement almost always can.
 leagueRouter.get('/price-changes', asyncHandler(async (_req, res) => {
   const bootstrap = await fetchBootstrap();
   const teamById = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]));
 
   const withMovement = bootstrap.elements
-    .filter((e) => e.cost_change_event !== 0)
+    .filter((e) => e.cost_change_start !== 0)
     .map((e) => ({
       web_name: e.web_name,
       team: teamById.get(e.team) ?? '',
       now_cost: e.now_cost / 10,
-      change: e.cost_change_event / 10,
+      change: e.cost_change_start / 10,
     }));
 
   const risers = withMovement.filter((p) => p.change > 0).sort((a, b) => b.change - a.change).slice(0, 5);
   const fallers = withMovement.filter((p) => p.change < 0).sort((a, b) => a.change - b.change).slice(0, 5);
 
   res.json({ risers, fallers });
+}));
+
+// A manager's full squad for a gameweek, shown in-app instead of linking
+// out to the FPL site. Pulls live from FPL (not from our own DB, since
+// we only store aggregate points, not the full 15-man squad) and maps
+// each pick to readable player info.
+leagueRouter.get('/team/:entryId/:gw', asyncHandler(async (req, res) => {
+  const { entryId, gw } = req.params;
+  const [bootstrap, picksData] = await Promise.all([
+    fetchBootstrap(),
+    fetchEntryPicks(Number(entryId), Number(gw)),
+  ]);
+
+  const POSITION_NAMES = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+  const picks = picksData.picks.map((p) => {
+    const player = bootstrap.elements.find((e) => e.id === p.element);
+    return {
+      web_name: player?.web_name ?? `#${p.element}`,
+      position: POSITION_NAMES[player?.element_type] ?? '?',
+      is_captain: p.is_captain,
+      is_vice_captain: p.is_vice_captain,
+      multiplier: p.multiplier,
+      starting: p.multiplier > 0,
+      pick_position: p.position,
+    };
+  }).sort((a, b) => a.pick_position - b.pick_position);
+
+  res.json({
+    picks,
+    entry_history: picksData.entry_history,
+    active_chip: picksData.active_chip,
+  });
+}));
+
+// Weekly award "flyers" — custom images an admin uploads for that
+// gameweek's Manager of the Week / Donkey of the Week / Best Defense /
+// Best Midfield / Best Attack. Stored as base64, one per (gameweek, award_type).
+leagueRouter.get('/flyers/:gw', asyncHandler(async (req, res) => {
+  const { rows } = await query(
+    'SELECT award_type, image_data FROM award_flyers WHERE gameweek = $1',
+    [req.params.gw]
+  );
+  const byType = {};
+  for (const r of rows) byType[r.award_type] = r.image_data;
+  res.json(byType);
 }));

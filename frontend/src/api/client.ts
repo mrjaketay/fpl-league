@@ -37,6 +37,8 @@ export const api = {
   hallOfFame: () => request('/api/league/awards/hall-of-fame'),
   longevity: () => request('/api/league/stats/longevity'),
   priceChanges: () => request('/api/league/price-changes'),
+  team: (entryId: number, gw: number) => request(`/api/league/team/${entryId}/${gw}`),
+  flyers: (gw: number) => request(`/api/league/flyers/${gw}`),
 
   login: (email: string, password: string) =>
     request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
@@ -53,6 +55,10 @@ export const api = {
   getSettings: () => request('/api/admin/settings'),
   updateSetting: (key: string, value: unknown) =>
     request(`/api/admin/settings/${key}`, { method: 'PUT', body: JSON.stringify({ value }) }),
+  uploadFlyer: (gameweek: number, award_type: string, image: string) =>
+    request('/api/admin/flyers', { method: 'PUT', body: JSON.stringify({ gameweek, award_type, image }) }),
+  deleteFlyer: (gameweek: number, award_type: string) =>
+    request(`/api/admin/flyers/${gameweek}/${award_type}`, { method: 'DELETE' }),
 };
 
 export function setToken(token: string) {

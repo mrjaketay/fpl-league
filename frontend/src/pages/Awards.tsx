@@ -11,6 +11,10 @@ const LABELS: Record<string, { label: string; tone: 'green' | 'pink' | 'cyan' | 
   transfer_villain: { label: 'Transfer Villain', tone: 'pink', emoji: '🔻' },
   the_wall: { label: 'The Wall (best defense)', tone: 'green', emoji: '🧱' },
   the_sieve: { label: 'The Sieve (worst defense)', tone: 'pink', emoji: '🕳️' },
+  midfield_king: { label: 'Midfield King (best midfield)', tone: 'green', emoji: '🎯' },
+  midfield_flop: { label: 'Midfield Flop (worst midfield)', tone: 'pink', emoji: '🎯' },
+  attack_king: { label: 'Attack King (best attack)', tone: 'green', emoji: '⚡' },
+  attack_flop: { label: 'Attack Flop (worst attack)', tone: 'pink', emoji: '⚡' },
 };
 
 type Award = {
@@ -111,7 +115,7 @@ export default function Awards() {
         {tally.length === 0 ? (
           <p style={{ color: 'var(--grey)' }}>No awards handed out yet this season.</p>
         ) : (
-          <table>
+          <div className="table-scroll"><table>
             <thead><tr><th>Manager</th><th>Award</th><th>Wins</th></tr></thead>
             <tbody>
               {tally.map((t, i) => (
@@ -122,7 +126,7 @@ export default function Awards() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>
