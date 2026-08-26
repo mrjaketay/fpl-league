@@ -290,10 +290,23 @@ leagueRouter.get('/price-changes', asyncHandler(async (_req, res) => {
 // each pick to readable player info.
 leagueRouter.get('/team/:entryId/:gw', asyncHandler(async (req, res) => {
   const { entryId, gw } = req.params;
-  const [bootstrap, picksData] = await Promise.all([
-    fetchBootstrap(),
-    fetchEntryPicks(Number(entryId), Number(gw)),
-  ]);
+
+  let picksData;
+  try {
+    picksData = await fetchEntryPicks(Number(entryId), Number(gw));
+  } catch (err) {
+    // FPL 404s this exact endpoint when a manager has no picks locked in
+    // for that gameweek yet — most commonly because it hasn't been
+    // played (or even reached its deadline) yet. That's a normal,
+    // expected state here, not a real error — tell the frontend so it
+    // can show a friendly message instead of raw error text.
+    if (err.message?.includes('404')) {
+      return res.json({ notAvailable: true, reason: 'not_played' });
+    }
+    throw err;
+  }
+
+  const bootstrap = await fetchBootstrap();
 
   const POSITION_NAMES = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
   const picks = picksData.picks.map((p) => {
