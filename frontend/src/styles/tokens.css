@@ -212,13 +212,75 @@ tr { transition: background 0.15s ease; }
 
 /* Modal */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(10, 0, 12, 0.7);
+  position: fixed; inset: 0; background: rgba(5, 0, 8, 0.82);
   display: flex; align-items: center; justify-content: center;
   z-index: 50; padding: 1rem;
   animation: fadeInUp 0.2s ease both;
 }
-.modal-card { max-width: 380px; width: 100%; }
-.modal-card--wide { max-width: 480px; }
+.modal-card {
+  max-width: 380px; width: 100%;
+  position: relative;
+  background: linear-gradient(160deg, #2a0030 0%, var(--purple-deep) 100%);
+  border: 1px solid rgba(246,246,250,0.14);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-card--wide { max-width: 520px; }
+
+.modal-close {
+  position: absolute; top: 0.85rem; right: 0.85rem;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(246,246,250,0.08);
+  border: 1px solid var(--line);
+  color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1rem; line-height: 1;
+  transition: background 0.15s ease;
+}
+.modal-close:hover { background: rgba(246,246,250,0.18); }
+
+/* Football pitch team view */
+.pitch {
+  background: linear-gradient(180deg, #0a5c33 0%, #0d7a42 50%, #0a5c33 100%);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 1rem 0.5rem;
+  position: relative;
+  display: grid;
+  gap: 1rem;
+}
+.pitch::before {
+  content: '';
+  position: absolute; left: 50%; top: 8%; bottom: 8%;
+  width: 1px; background: rgba(255,255,255,0.25);
+  transform: translateX(-50%);
+}
+.pitch-row { display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; position: relative; z-index: 1; }
+.pitch-player {
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  width: 62px; text-align: center;
+}
+.pitch-player .avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--purple-deep); border: 2px solid var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700;
+  position: relative;
+}
+.pitch-player .armband {
+  position: absolute; top: -6px; right: -6px;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--green); color: var(--purple-deep);
+  font-size: 0.55rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.pitch-player .pname {
+  font-size: 0.62rem; color: var(--white); line-height: 1.1;
+  background: rgba(0,0,0,0.35); border-radius: 3px; padding: 0.1rem 0.25rem;
+}
+
+/* Three-equal-column row, for the secondary weekly award posters */
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 760px) { .three-col { grid-template-columns: 1fr; } }
 
 /* Responsive layout helpers */
 .two-col-2-1 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }

@@ -30,6 +30,8 @@ export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { mana
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
+
         <span className="field-label">Manager</span>
         <h2 style={{ fontSize: '1.3rem', marginTop: '0.3rem' }}>{manager.manager_name}</h2>
         <span style={{ color: 'var(--grey)' }}>{manager.team_name}</span>
@@ -61,12 +63,9 @@ export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { mana
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1.5rem' }}>
-          <button className="btn btn--primary" style={{ flex: 1 }} onClick={() => setViewingTeam(true)}>
-            View Team
-          </button>
-          <button className="btn btn--ghost" onClick={onClose}>Close</button>
-        </div>
+        <button className="btn btn--primary" style={{ width: '100%', marginTop: '1.5rem' }} onClick={() => setViewingTeam(true)}>
+          View Team
+        </button>
       </div>
     </div>
   );

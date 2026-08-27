@@ -43,9 +43,10 @@ export default function Home() {
   }
 
   const noDataYet = standings.length === 0;
-  const featured = Object.keys(WEEKLY_AWARD_META)
-    .map((type) => ({ type, award: awards.find((a) => a.award_type === type) }))
-    .filter((f) => f.award);
+  const primaryTypes = ['manager_of_week', 'donkey_of_week'];
+  const secondaryTypes = ['the_wall', 'midfield_king', 'attack_king'];
+  const primaryFeatured = primaryTypes.map((type) => ({ type, award: awards.find((a) => a.award_type === type) })).filter((f) => f.award);
+  const secondaryFeatured = secondaryTypes.map((type) => ({ type, award: awards.find((a) => a.award_type === type) })).filter((f) => f.award);
 
   return (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -64,7 +65,7 @@ export default function Home() {
         <div className="two-col-2-1">
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="two-col-even">
-              {featured.map(({ type, award }, i) => {
+              {primaryFeatured.map(({ type, award }, i) => {
                 const meta = WEEKLY_AWARD_META[type];
                 return (
                   <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
@@ -81,6 +82,27 @@ export default function Home() {
                 );
               })}
             </div>
+
+            {secondaryFeatured.length > 0 && (
+              <div className="three-col">
+                {secondaryFeatured.map(({ type, award }, i) => {
+                  const meta = WEEKLY_AWARD_META[type];
+                  return (
+                    <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
+                      <AwardPoster
+                        tone={meta.tone}
+                        emoji={meta.emoji}
+                        title={meta.title}
+                        managerName={award.manager_name}
+                        teamName={award.team_name}
+                        value={`${award.value} pts`}
+                        flyerImage={flyers[type]}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="card fade-in fade-in-3">
               <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>⭐ HALL OF FAME</h3>

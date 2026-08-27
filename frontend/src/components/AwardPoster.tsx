@@ -12,7 +12,9 @@ export default function AwardPoster({ tone, emoji, title, managerName, teamName,
   if (flyerImage) {
     return (
       <div className={`poster poster--${tone}`} style={{ padding: 0, overflow: 'hidden' }}>
-        <img src={flyerImage} alt={title} style={{ width: '100%', display: 'block', maxHeight: 260, objectFit: 'cover' }} />
+        <div style={{ width: '100%', aspectRatio: '16 / 10', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+          <img src={flyerImage} alt={title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
         <div style={{ padding: '1rem 1.25rem' }}>
           <div className="poster-title">{title}</div>
           <div className="poster-name">{managerName}</div>
