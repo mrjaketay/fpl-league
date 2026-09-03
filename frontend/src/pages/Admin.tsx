@@ -4,6 +4,7 @@ import { api, isLoggedIn, clearToken } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 
 type QuarterRange = [number, number];
+type MonthRange = [string, number, number];
 
 const FLYER_TYPES: { type: string; label: string }[] = [
   { type: 'manager_of_week', label: 'Manager of the Week' },
@@ -22,6 +23,16 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+function downloadJson(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Admin() {
   const [log, setLog] = useState<string[]>([]);
   const [gw, setGw] = useState(1);
@@ -29,6 +40,7 @@ export default function Admin() {
   const [totalGw, setTotalGw] = useState(38);
   const [hofThreshold, setHofThreshold] = useState('100');
   const [quarters, setQuarters] = useState<QuarterRange[]>([[1, 9], [10, 19], [20, 29], [30, 38]]);
+  const [months, setMonths] = useState<MonthRange[]>([]);
   const [flyerGw, setFlyerGw] = useState(1);
   const [flyerPreviews, setFlyerPreviews] = useState<Record<string, string>>({});
   const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
@@ -73,8 +85,10 @@ export default function Admin() {
     api.getSettings().then((rows: any[]) => {
       const hof = rows.find((r) => r.key === 'hall_of_fame_threshold');
       const qb = rows.find((r) => r.key === 'quarter_boundaries');
+      const mm = rows.find((r) => r.key === 'month_mapping');
       if (hof) setHofThreshold(String(hof.value));
       if (qb) setQuarters(qb.value);
+      if (mm) setMonths(mm.value);
     }).catch(() => {});
   }, []);
 
@@ -127,6 +141,23 @@ export default function Admin() {
           <span className="field-label">To</span>
           <GameweekSelect value={totalGw} onChange={setTotalGw} />
           <button className="btn btn--primary" onClick={() => run('Generate H2H fixtures', () => api.generateH2H(startGw, totalGw))}>Generate</button>
+        </div>
+      </div>
+
+      <div className="card fade-in fade-in-2">
+        <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Manager of the Month</h2>
+        <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+          Sums everyone's net points across a calendar month's gameweeks and crowns the highest. Same idea as
+          the quarterly challenges — click once a month's last gameweek has been synced. Month ranges come
+          from the Season Calendar section below.
+        </p>
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {months.map(([name, from, to], i) => (
+            <button key={name} className="btn btn--ghost" onClick={() => run(`Lock in ${name} (GW${from}–${to})`, () => api.recomputeMonthly(i + 1))}>
+              {name} <span style={{ color: 'var(--grey)', fontWeight: 400 }}>(GW{from}–{to})</span>
+            </button>
+          ))}
+          {months.length === 0 && <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No months configured yet.</span>}
         </div>
       </div>
 
@@ -186,6 +217,51 @@ export default function Admin() {
             Save Quarter Boundaries
           </button>
         </div>
+
+        <div style={{ marginTop: '1.5rem' }}>
+          <span className="field-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Month Mapping (Season Calendar)</span>
+          <p style={{ color: 'var(--grey)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+            Which gameweeks fall in each calendar month, for Manager of the Month above. Edit gameweek ranges
+            as fixture schedules shift — month names aren't editable here, just their gameweek ranges.
+          </p>
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            {months.map(([name, from, to], i) => (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span style={{ width: 90, color: 'var(--grey)', fontSize: '0.85rem' }}>{name}</span>
+                <span className="field-label">From</span>
+                <GameweekSelect value={from} onChange={(v) => setMonths((ms) => ms.map((m, idx) => idx === i ? [m[0], v, m[2]] : m))} />
+                <span className="field-label">To</span>
+                <GameweekSelect value={to} onChange={(v) => setMonths((ms) => ms.map((m, idx) => idx === i ? [m[0], m[1], v] : m))} />
+              </div>
+            ))}
+          </div>
+          <button className="btn btn--ghost" style={{ marginTop: '0.75rem' }} onClick={() => run('Update month mapping', () => api.updateSetting('month_mapping', months))}>
+            Save Month Mapping
+          </button>
+        </div>
+      </div>
+
+      <div className="card fade-in">
+        <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Backup / Export Data</h2>
+        <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+          Downloads every manager, gameweek score, award, and H2H fixture as a JSON file to your computer —
+          an independent backup of your league's numbers, separate from the database itself.
+        </p>
+        <button
+          className="btn btn--primary"
+          onClick={async () => {
+            appendLog('Exporting data…');
+            try {
+              const data = await api.exportData();
+              downloadJson(data, `fpl-league-export-gw${gw}.json`);
+              appendLog('✓ Export downloaded');
+            } catch (err: any) {
+              appendLog(`✗ Export failed: ${err.message}`);
+            }
+          }}
+        >
+          Download Export (JSON)
+        </button>
       </div>
 
       <div className="card fade-in">

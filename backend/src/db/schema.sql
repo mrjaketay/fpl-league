@@ -88,6 +88,10 @@ CREATE TABLE IF NOT EXISTS award_flyers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_gameweek_stats_gw ON gameweek_stats(gameweek);
+
+-- Added for Manager of the Month — safe to re-run (IF NOT EXISTS) against
+-- a database that already has the awards table from before this column existed.
+ALTER TABLE awards ADD COLUMN IF NOT EXISTS month INTEGER;
 CREATE INDEX IF NOT EXISTS idx_awards_type_gw ON awards(award_type, gameweek);
 CREATE INDEX IF NOT EXISTS idx_h2h_gw ON h2h_fixtures(gameweek);
 
@@ -97,5 +101,6 @@ INSERT INTO league_settings (key, value) VALUES
   ('hall_of_fame_threshold', '100'),
   ('season_total_gameweeks', '38'),
   ('quarter_boundaries', '[[1,9],[10,19],[20,29],[30,38]]'),
-  ('league_name', '"My Mini League"')
+  ('league_name', '"My Mini League"'),
+  ('month_mapping', '[["August",1,3],["September",4,7],["October",8,10],["November",11,13],["December",14,17],["January",18,21],["February",22,25],["March",26,29],["April",30,34],["May",35,38]]')
 ON CONFLICT (key) DO NOTHING;

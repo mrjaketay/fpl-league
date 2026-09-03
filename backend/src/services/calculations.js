@@ -186,3 +186,33 @@ export async function recomputeQuarterlyAwards(quarter) {
 
   return { quarter, from, to, computed: rows.length };
 }
+
+// Manager of the Month — sums each manager's net gameweek points across
+// one month's gameweek range (from league_settings.month_mapping) and
+// crowns whoever's highest. Ties produce joint winners, same pattern as
+// every other award here.
+export async function recomputeMonthlyAward(monthIndex) {
+  const mapping = await getSetting('month_mapping'); // [[name, fromGw, toGw], ...]
+  const [name, from, to] = mapping[monthIndex - 1];
+
+  const { rows } = await query(
+    `SELECT entry_id, SUM(gw_points_net) AS total
+     FROM gameweek_stats
+     WHERE gameweek BETWEEN $1 AND $2
+     GROUP BY entry_id`,
+    [from, to]
+  );
+  if (rows.length === 0) return { month: monthIndex, name, computed: 0 };
+
+  await query('DELETE FROM awards WHERE award_type = $1 AND month = $2', ['manager_of_month', monthIndex]);
+  const max = Math.max(...rows.map((r) => Number(r.total)));
+  const winners = rows.filter((r) => Number(r.total) === max);
+  for (const w of winners) {
+    await query(
+      `INSERT INTO awards (award_type, month, entry_id, value) VALUES ($1,$2,$3,$4)`,
+      ['manager_of_month', monthIndex, w.entry_id, max]
+    );
+  }
+
+  return { month: monthIndex, name, from, to, computed: rows.length };
+}

@@ -39,6 +39,8 @@ export const api = {
   priceChanges: () => request('/api/league/price-changes'),
   team: (entryId: number, gw: number) => request(`/api/league/team/${entryId}/${gw}`),
   flyers: (gw: number) => request(`/api/league/flyers/${gw}`),
+  monthlyAward: (month: number) => request(`/api/league/awards/monthly/${month}`),
+  quickStats: () => request('/api/league/quick-stats'),
 
   login: (email: string, password: string) =>
     request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
@@ -59,6 +61,8 @@ export const api = {
     request('/api/admin/flyers', { method: 'PUT', body: JSON.stringify({ gameweek, award_type, image }) }),
   deleteFlyer: (gameweek: number, award_type: string) =>
     request(`/api/admin/flyers/${gameweek}/${award_type}`, { method: 'DELETE' }),
+  recomputeMonthly: (month: number) => request(`/api/admin/awards/monthly/${month}`, { method: 'POST' }),
+  exportData: () => request('/api/admin/export'),
 };
 
 export function setToken(token: string) {

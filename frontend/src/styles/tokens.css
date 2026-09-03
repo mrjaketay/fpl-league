@@ -125,14 +125,14 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .rank-badge--plain { background: rgba(246,246,250,0.08); color: var(--grey); }
 
 .stat-tile {
-  display: flex; flex-direction: column; gap: 0.25rem;
+  display: flex; flex-direction: column; gap: 0.4rem;
   padding: 1rem 1.25rem;
   background: rgba(0,0,0,0.2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
 }
-.stat-tile .label { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--grey); }
-.stat-tile .value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+.stat-tile .label { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--grey); line-height: 1.3; display: block; }
+.stat-tile .value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; line-height: 1.15; display: block; }
 
 /* Field label — replaces the old all-mono "GAMEWEEK" style, which read
    too robotic. Body font, medium weight, a touch of tracking instead of
@@ -196,6 +196,9 @@ tr { transition: background 0.15s ease; }
   border-radius: var(--radius);
   padding: 1.75rem;
   isolation: isolate;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .poster::before {
   content: '';
@@ -203,12 +206,30 @@ tr { transition: background 0.15s ease; }
   background: repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 22px);
   z-index: -1;
 }
+/* Animated shine sweep for extra vibrancy */
+.poster::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.14), transparent);
+  animation: shineSweep 5s ease-in-out infinite;
+  z-index: -1;
+}
+@keyframes shineSweep {
+  0% { left: -60%; }
+  35% { left: 130%; }
+  100% { left: 130%; }
+}
 .poster--green { background: linear-gradient(150deg, #00c46f 0%, var(--purple) 75%); border: 1px solid rgba(0,255,133,0.4); }
-.poster--pink { background: linear-gradient(150deg, #b3005c 0%, var(--purple) 75%); border: 1px solid rgba(255,40,130,0.4); }
+.poster--pink { background: linear-gradient(150deg, #d1006b 0%, var(--purple) 75%); border: 1px solid rgba(255,40,130,0.45); }
+.poster--cyan { background: linear-gradient(150deg, #00a4b3 0%, var(--purple) 75%); border: 1px solid rgba(4,245,255,0.4); }
 .poster .poster-emoji { font-size: 2.75rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35)); }
 .poster .poster-title { font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; }
 .poster .poster-name { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; margin-top: 0.3rem; }
 .poster .poster-value { font-family: var(--font-mono); font-size: 2.2rem; font-weight: 700; margin-top: 0.5rem; }
+.poster .poster-body { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+.poster .poster-image-wrap { width: calc(100% + 3.5rem); margin: -1.75rem -1.75rem 1rem; }
+.poster .poster-image-wrap img { width: 100%; height: auto; display: block; }
 
 /* Modal */
 .modal-overlay {
@@ -241,12 +262,13 @@ tr { transition: background 0.15s ease; }
 /* Football pitch team view */
 .pitch {
   background: linear-gradient(180deg, #0a5c33 0%, #0d7a42 50%, #0a5c33 100%);
-  border-radius: var(--radius);
+  border-radius: var(--radius) var(--radius) 0 0;
   border: 1px solid rgba(255,255,255,0.15);
-  padding: 1rem 0.5rem;
+  border-bottom: none;
+  padding: 1.1rem 0.5rem;
   position: relative;
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 .pitch::before {
   content: '';
@@ -254,33 +276,92 @@ tr { transition: background 0.15s ease; }
   width: 1px; background: rgba(255,255,255,0.25);
   transform: translateX(-50%);
 }
+.pitch::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%; width: 70px; height: 70px;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 .pitch-row { display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; position: relative; z-index: 1; }
 .pitch-player {
   display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
   width: 62px; text-align: center;
 }
 .pitch-player .avatar {
-  width: 34px; height: 34px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   background: var(--purple-deep); border: 2px solid var(--white);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700;
   position: relative;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .pitch-player .armband {
   position: absolute; top: -6px; right: -6px;
-  width: 15px; height: 15px; border-radius: 50%;
+  width: 16px; height: 16px; border-radius: 50%;
   background: var(--green); color: var(--purple-deep);
   font-size: 0.55rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--purple-deep);
 }
 .pitch-player .pname {
   font-size: 0.62rem; color: var(--white); line-height: 1.1;
-  background: rgba(0,0,0,0.35); border-radius: 3px; padding: 0.1rem 0.25rem;
+  background: rgba(0,0,0,0.4); border-radius: 3px; padding: 0.15rem 0.3rem;
 }
 
-/* Three-equal-column row, for the secondary weekly award posters */
-.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+/* Bench strip — deliberately a different look from the pitch (flat grey
+   "dugout" bar instead of green turf) so it reads as clearly separate,
+   matching how the official app distinguishes subs from the XI. */
+.bench-strip {
+  background: #1a1420;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-top: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 0.85rem 0.75rem;
+}
+.bench-strip .bench-label {
+  font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--grey); margin-bottom: 0.5rem; display: block;
+}
+.bench-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.bench-player {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.3rem 0.7rem 0.3rem 0.4rem;
+}
+.bench-player .bnum {
+  width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.6rem; color: var(--grey);
+}
+.bench-player span.bname { font-size: 0.78rem; }
+
+/* Three-equal-column row, for the secondary weekly award posters.
+   align-items: stretch (grid default) plus height:100% on children below
+   is what makes these match height even when their content differs. */
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: stretch; }
+.three-col > * { height: 100%; }
 @media (max-width: 760px) { .three-col { grid-template-columns: 1fr; } }
+
+/* General vibrancy: hover lift on every card, not just clickable ones,
+   and a livelier button interaction. */
+.card:hover { transform: translateY(-2px); }
+.btn:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 6px 16px rgba(0,255,133,0.15); }
+.btn--primary:hover { box-shadow: 0 6px 20px rgba(0,255,133,0.35); }
+
+/* Section heading with a small colored accent bar */
+.section-heading {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.95rem; color: var(--grey); margin-bottom: 1rem;
+}
+.section-heading::before {
+  content: ''; width: 4px; height: 16px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--green), var(--cyan));
+}
+
+/* Row entrance animation for table/list rows, staggered via inline
+   animationDelay set from the row index. */
+@keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+.row-in { animation: rowIn 0.35s ease both; }
 
 /* Responsive layout helpers */
 .two-col-2-1 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }

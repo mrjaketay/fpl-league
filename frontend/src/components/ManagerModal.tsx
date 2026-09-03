@@ -21,6 +21,7 @@ export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { mana
       <TeamModal
         entryId={manager.entry_id}
         managerName={manager.manager_name}
+        teamName={manager.team_name}
         defaultGw={manager.last_gameweek ?? defaultGw}
         onClose={() => setViewingTeam(false)}
       />
@@ -32,9 +33,9 @@ export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { mana
       <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
 
-        <span className="field-label">Manager</span>
-        <h2 style={{ fontSize: '1.3rem', marginTop: '0.3rem' }}>{manager.manager_name}</h2>
-        <span style={{ color: 'var(--grey)' }}>{manager.team_name}</span>
+        <span className="field-label">Team</span>
+        <h2 style={{ fontSize: '1.3rem', marginTop: '0.3rem' }}>{manager.team_name}</h2>
+        <span style={{ color: 'var(--grey)' }}>{manager.manager_name}</span>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '1.25rem' }}>
           {manager.total_points_after != null && (

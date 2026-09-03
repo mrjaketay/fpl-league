@@ -3,7 +3,7 @@ import { requireAdmin } from '../middleware/auth.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { query } from '../db/pool.js';
 import { syncGameweek } from '../services/syncService.js';
-import { recomputeGameweekAwards, recomputeQuarterlyAwards } from '../services/calculations.js';
+import { recomputeGameweekAwards, recomputeQuarterlyAwards, recomputeMonthlyAward } from '../services/calculations.js';
 import { generateSeasonFixtures, settleH2H } from '../services/h2hService.js';
 import { fetchBootstrap, currentEventId } from '../services/fplApi.js';
 
@@ -57,6 +57,11 @@ adminRouter.post('/awards/quarterly/:quarter', asyncHandler(async (req, res) => 
   res.json(result);
 }));
 
+adminRouter.post('/awards/monthly/:month', asyncHandler(async (req, res) => {
+  const result = await recomputeMonthlyAward(Number(req.params.month));
+  res.json(result);
+}));
+
 adminRouter.post('/h2h/generate', asyncHandler(async (req, res) => {
   const { startGameweek, totalGameweeks } = req.body;
   const result = await generateSeasonFixtures(Number(startGameweek), Number(totalGameweeks));
@@ -96,4 +101,26 @@ adminRouter.put('/flyers', asyncHandler(async (req, res) => {
 adminRouter.delete('/flyers/:gw/:awardType', asyncHandler(async (req, res) => {
   await query('DELETE FROM award_flyers WHERE gameweek = $1 AND award_type = $2', [req.params.gw, req.params.awardType]);
   res.json({ ok: true });
+}));
+
+// Full data export/backup — everything except flyer images (those are
+// excluded to keep the download small; they're not critical to restore
+// the league's numbers, just the decoration). Independent of the
+// database itself, so useful as a safety net regardless of hosting.
+adminRouter.get('/export', asyncHandler(async (_req, res) => {
+  const [managers, gameweekStats, awards, h2hFixtures, settings] = await Promise.all([
+    query('SELECT * FROM managers ORDER BY entry_id'),
+    query('SELECT * FROM gameweek_stats ORDER BY gameweek, entry_id'),
+    query('SELECT * FROM awards ORDER BY gameweek, quarter, month, award_type'),
+    query('SELECT * FROM h2h_fixtures ORDER BY gameweek'),
+    query('SELECT * FROM league_settings'),
+  ]);
+  res.json({
+    exported_at: new Date().toISOString(),
+    managers: managers.rows,
+    gameweek_stats: gameweekStats.rows,
+    awards: awards.rows,
+    h2h_fixtures: h2hFixtures.rows,
+    settings: settings.rows,
+  });
 }));

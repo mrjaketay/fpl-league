@@ -20,6 +20,7 @@ export default function Home() {
   const [standings, setStandings] = useState<any[]>([]);
   const [longevity, setLongevity] = useState<any[]>([]);
   const [prices, setPrices] = useState<{ risers: any[]; fallers: any[] }>({ risers: [], fallers: [] });
+  const [quickStats, setQuickStats] = useState<any>(null);
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function Home() {
     api.standings().then(setStandings).catch(() => {});
     api.longevity().then(setLongevity).catch(() => {});
     api.priceChanges().then(setPrices).catch(() => {});
+    api.quickStats().then(setQuickStats).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -45,11 +47,43 @@ export default function Home() {
   const noDataYet = standings.length === 0;
   const primaryTypes = ['manager_of_week', 'donkey_of_week'];
   const secondaryTypes = ['the_wall', 'midfield_king', 'attack_king'];
-  const primaryFeatured = primaryTypes.map((type) => ({ type, award: awards.find((a) => a.award_type === type) })).filter((f) => f.award);
-  const secondaryFeatured = secondaryTypes.map((type) => ({ type, award: awards.find((a) => a.award_type === type) })).filter((f) => f.award);
+
+  function buildFeatured(types: string[]) {
+    return types
+      .map((type) => ({ type, winners: awards.filter((a) => a.award_type === type) }))
+      .filter((f) => f.winners.length > 0);
+  }
+  const primaryFeatured = buildFeatured(primaryTypes);
+  const secondaryFeatured = buildFeatured(secondaryTypes);
 
   return (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
+      {quickStats && (
+        <div className="card fade-in" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '1.1rem 1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+            <span className="mono" style={{ color: 'var(--green)', fontWeight: 700 }}>{quickStats.active_managers}</span>
+            <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>Active Managers</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+            <span className="live-dot" />
+            <span className="mono" style={{ color: 'var(--cyan)', fontWeight: 700 }}>GW {quickStats.current_gameweek ?? '—'}</span>
+          </div>
+          {quickStats.season_leader && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>👑 Leader:</span>
+              <span style={{ fontWeight: 600 }}>{quickStats.season_leader.team_name}</span>
+            </div>
+          )}
+          {quickStats.chief_donkey && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>🐴 Chief Donkey:</span>
+              <span style={{ fontWeight: 600 }}>{quickStats.chief_donkey.team_name}</span>
+              <span className="mono" style={{ color: 'var(--pink)', fontSize: '0.8rem' }}>({quickStats.chief_donkey.wins})</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {noDataYet && (
         <div className="card card--hero fade-in" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
           <h2 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>Kickoff hasn't happened yet</h2>
@@ -65,17 +99,18 @@ export default function Home() {
         <div className="two-col-2-1">
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="two-col-even">
-              {primaryFeatured.map(({ type, award }, i) => {
+              {primaryFeatured.map(({ type, winners }, i) => {
                 const meta = WEEKLY_AWARD_META[type];
+                const isJoint = winners.length > 1;
                 return (
                   <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
                     <AwardPoster
                       tone={meta.tone}
                       emoji={meta.emoji}
-                      title={meta.title}
-                      managerName={award.manager_name}
-                      teamName={award.team_name}
-                      value={`${award.value} pts`}
+                      title={isJoint ? `Joint ${meta.title}` : meta.title}
+                      managerName={winners.map((w) => w.manager_name).join(' & ')}
+                      teamName={winners.map((w) => w.team_name).join(' & ')}
+                      value={`${winners[0].value} pts`}
                       flyerImage={flyers[type]}
                     />
                   </div>
@@ -85,17 +120,18 @@ export default function Home() {
 
             {secondaryFeatured.length > 0 && (
               <div className="three-col">
-                {secondaryFeatured.map(({ type, award }, i) => {
+                {secondaryFeatured.map(({ type, winners }, i) => {
                   const meta = WEEKLY_AWARD_META[type];
+                  const isJoint = winners.length > 1;
                   return (
                     <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
                       <AwardPoster
                         tone={meta.tone}
                         emoji={meta.emoji}
-                        title={meta.title}
-                        managerName={award.manager_name}
-                        teamName={award.team_name}
-                        value={`${award.value} pts`}
+                        title={isJoint ? `Joint ${meta.title}` : meta.title}
+                        managerName={winners.map((w) => w.manager_name).join(' & ')}
+                        teamName={winners.map((w) => w.team_name).join(' & ')}
+                        value={`${winners[0].value} pts`}
                         flyerImage={flyers[type]}
                       />
                     </div>
@@ -105,15 +141,15 @@ export default function Home() {
             )}
 
             <div className="card fade-in fade-in-3">
-              <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>⭐ HALL OF FAME</h3>
+              <div className="section-heading">⭐ HALL OF FAME</div>
               {hof.length === 0 ? (
                 <p style={{ color: 'var(--grey)' }}>No one's hit 100+ points without a chip yet — it'll show up here the moment they do.</p>
               ) : (
                 <div style={{ display: 'grid', gap: '0.6rem' }}>
                   {hof.map((h, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>
+                    <div key={i} className="row-in" style={{ animationDelay: `${i * 0.04}s`, display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>
                       <span>
-                        <button onClick={() => openManager(h.entry_id)} style={linkBtn}>{h.manager_name}</button>
+                        <button onClick={() => openManager(h.entry_id)} style={linkBtn}>{h.team_name}</button>
                         <span style={{ color: 'var(--grey)' }}> — GW{h.gameweek}</span>
                       </span>
                       <span className="mono" style={{ color: 'var(--green)' }}>{h.value} pts</span>
@@ -127,14 +163,14 @@ export default function Home() {
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="card fade-in fade-in-2">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)' }}>STANDINGS</h3>
+                <span className="section-heading" style={{ marginBottom: 0 }}>STANDINGS</span>
                 <Link to="/standings" style={{ fontSize: '0.8rem' }}>Full table →</Link>
               </div>
               <div style={{ display: 'grid', gap: '0.5rem' }}>
                 {standings.slice(0, 8).map((s, i) => (
-                  <button key={s.entry_id} onClick={() => openManager(s.entry_id)} style={{ ...rowBtn, background: i === 0 ? 'rgba(0,255,133,0.08)' : 'transparent' }}>
+                  <button key={s.entry_id} className="row-in" style={{ ...rowBtn, animationDelay: `${i * 0.04}s`, background: i === 0 ? 'rgba(0,255,133,0.08)' : 'transparent' }} onClick={() => openManager(s.entry_id)}>
                     <span className="mono" style={{ color: 'var(--grey)', width: 20 }}>{i + 1}</span>
-                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{s.manager_name}</span>
+                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{s.team_name}</span>
                     <span className="mono" style={{ color: 'var(--green)' }}>{s.total_points_after}</span>
                   </button>
                 ))}
@@ -142,7 +178,7 @@ export default function Home() {
             </div>
 
             <div className="card fade-in fade-in-3">
-              <h3 style={{ fontSize: '0.95rem', color: 'var(--grey)', marginBottom: '1rem' }}>💰 PRICE CHANGES (SEASON)</h3>
+              <div className="section-heading">💰 PRICE CHANGES (SEASON)</div>
               {prices.risers.length === 0 && prices.fallers.length === 0 ? (
                 <p style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No price changes yet this season.</p>
               ) : (

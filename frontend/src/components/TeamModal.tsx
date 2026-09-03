@@ -26,11 +26,13 @@ function PitchPlayer({ p }: { p: any }) {
 export default function TeamModal({
   entryId,
   managerName,
+  teamName,
   defaultGw,
   onClose,
 }: {
   entryId: number;
   managerName: string;
+  teamName?: string;
   defaultGw: number;
   onClose: () => void;
 }) {
@@ -57,12 +59,18 @@ export default function TeamModal({
       <div className="card modal-card modal-card--wide" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingRight: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingRight: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <span className="field-label">Squad</span>
-            <h2 style={{ fontSize: '1.2rem', marginTop: '0.2rem' }}>{managerName}</h2>
+            <h2 style={{ fontSize: '1.2rem', marginTop: '0.2rem' }}>{teamName || managerName}</h2>
+            {teamName && <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>{managerName}</span>}
           </div>
-          <GameweekSelect value={gw} onChange={setGw} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            {data?.active_chip && (
+              <span className="pill pill--cyan">{CHIP_LABELS[data.active_chip] ?? data.active_chip}</span>
+            )}
+            <GameweekSelect value={gw} onChange={setGw} />
+          </div>
         </div>
 
         {loading && <p className="mono" style={{ color: 'var(--grey)', marginTop: '1rem' }}>Loading squad…</p>}
@@ -77,12 +85,6 @@ export default function TeamModal({
 
         {data && !data.notAvailable && !loading && (
           <div style={{ marginTop: '1rem' }}>
-            {data.active_chip && (
-              <span className="pill pill--cyan" style={{ marginBottom: '0.75rem' }}>
-                {CHIP_LABELS[data.active_chip] ?? data.active_chip} played
-              </span>
-            )}
-
             <div className="pitch">
               <div className="pitch-row">{fwd.map((p: any, i: number) => <PitchPlayer key={i} p={p} />)}</div>
               <div className="pitch-row">{mid.map((p: any, i: number) => <PitchPlayer key={i} p={p} />)}</div>
@@ -91,18 +93,21 @@ export default function TeamModal({
             </div>
 
             {bench.length > 0 && (
-              <div style={{ marginTop: '1rem' }}>
-                <span className="field-label" style={{ fontSize: '0.65rem' }}>BENCH</span>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+              <div className="bench-strip">
+                <span className="bench-label">Substitutes</span>
+                <div className="bench-row">
                   {bench.map((p: any, i: number) => (
-                    <span key={i} className="pill pill--outline">{p.web_name}</span>
+                    <div key={i} className="bench-player">
+                      <span className="bnum">{i + 12}</span>
+                      <span className="bname">{p.web_name}</span>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
             {data.entry_history && (
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem' }}>
                 <div className="stat-tile" style={{ flex: 1 }}>
                   <span className="label">GW Points</span>
                   <span className="value" style={{ fontSize: '1.2rem' }}>{data.entry_history.points}</span>

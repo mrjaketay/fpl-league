@@ -89,7 +89,7 @@ export default function LeagueStats() {
             return (
               <div key={key} className="stat-tile">
                 <span className="label">{emoji} {label}</span>
-                <span className="value" style={{ fontSize: '1.1rem' }}>{top.manager_name}</span>
+                <span className="value" style={{ fontSize: '1.1rem' }}>{top.team_name}</span>
                 <span className="mono" style={{ color: 'var(--green)', fontSize: '0.85rem' }}>{top[key]} {key.includes('wins') ? 'wins' : 'weeks'}</span>
               </div>
             );
@@ -108,7 +108,7 @@ export default function LeagueStats() {
               {chips.map((c, i) => (
                 <tr key={i}>
                   <td className="num">{c.gameweek}</td>
-                  <td>{c.manager_name} <span style={{ color: 'var(--grey)' }}>({c.team_name})</span></td>
+                  <td>{c.team_name} <span style={{ color: 'var(--grey)' }}>({c.manager_name})</span></td>
                   <td><span className="pill pill--cyan">{CHIP_LABELS[c.chip_played] ?? c.chip_played}</span></td>
                 </tr>
               ))}

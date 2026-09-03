@@ -84,10 +84,48 @@ leagueRouter.get('/awards/quarterly/:quarter', asyncHandler(async (req, res) => 
   res.json(rows);
 }));
 
+// Manager of the Month for one month index (1-based, matches month_mapping order).
+leagueRouter.get('/awards/monthly/:month', asyncHandler(async (req, res) => {
+  const { rows } = await query(
+    `SELECT a.*, m.manager_name, m.team_name
+     FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+     WHERE month = $1 AND award_type = 'manager_of_month'`,
+    [req.params.month]
+  );
+  res.json(rows);
+}));
+
+// Quick-stats strip for the homepage: active managers, current gameweek,
+// season leader, and "Chief Donkey" (most Donkey of the Week wins).
+leagueRouter.get('/quick-stats', asyncHandler(async (_req, res) => {
+  const { rows: countRows } = await query('SELECT COUNT(*) FROM managers WHERE active = true');
+  const { rows: gwRows } = await query('SELECT MAX(gameweek) AS latest FROM gameweek_stats');
+  const { rows: leaderRows } = await query(`
+    SELECT m.manager_name, m.team_name, gs.total_points_after
+    FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+    WHERE gs.gameweek = (SELECT MAX(gameweek) FROM gameweek_stats)
+    ORDER BY gs.total_points_after DESC LIMIT 1
+  `);
+  const { rows: donkeyRows } = await query(`
+    SELECT m.manager_name, m.team_name, COUNT(*) AS wins
+    FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+    WHERE a.award_type = 'donkey_of_week'
+    GROUP BY m.manager_name, m.team_name
+    ORDER BY wins DESC LIMIT 1
+  `);
+  res.json({
+    active_managers: Number(countRows[0].count),
+    current_gameweek: gwRows[0]?.latest ?? null,
+    season_leader: leaderRows[0] ?? null,
+    chief_donkey: donkeyRows[0] ?? null,
+  });
+}));
+
 // H2H fixtures + results for a gameweek.
 leagueRouter.get('/h2h/gameweek/:gw', asyncHandler(async (req, res) => {
   const { rows } = await query(
-    `SELECT f.*, m1.manager_name AS manager_1_name, m2.manager_name AS manager_2_name,
+    `SELECT f.*, m1.manager_name AS manager_1_name, m1.team_name AS team_1_name,
+            m2.manager_name AS manager_2_name, m2.team_name AS team_2_name,
             w.manager_name AS winner_name
      FROM h2h_fixtures f
      JOIN managers m1 ON m1.entry_id = f.entry_id_1
