@@ -1,17 +1,25 @@
+import AwardIcon from './AwardIcon';
+
+type Winner = { managerName: string; teamName: string };
+type IconKind = 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack' | 'hof';
+
 type Props = {
   tone: 'green' | 'pink' | 'cyan';
-  emoji: string;
+  icon: IconKind;
   title: string;
-  managerName: string;
-  teamName: string;
+  winners: Winner[];
   value: string;
   flyerImage?: string;
+  iconSize?: number;
 };
 
-// Order swapped per your request: team name leads (bold, primary),
-// manager's real name is secondary — matching how the official FPL app
-// prioritizes team names over people's names.
-export default function AwardPoster({ tone, emoji, title, managerName, teamName, value, flyerImage }: Props) {
+// Team name leads (bold, primary), manager's real name is secondary —
+// matching how the official FPL app prioritizes team names over people's
+// names. Handles 1 or several joint winners with a proper stacked list
+// instead of a single cramped "&"-joined line.
+export default function AwardPoster({ tone, icon, title, winners, value, flyerImage, iconSize = 44 }: Props) {
+  const isJoint = winners.length > 1;
+
   return (
     <div className={`poster poster--${tone}`}>
       {flyerImage ? (
@@ -19,12 +27,18 @@ export default function AwardPoster({ tone, emoji, title, managerName, teamName,
           <img src={flyerImage} alt={title} />
         </div>
       ) : (
-        <div className="poster-emoji">{emoji}</div>
+        <AwardIcon kind={icon} size={iconSize} />
       )}
       <div className="poster-body">
-        <div className="poster-title">{title}</div>
-        <div className="poster-name">{teamName}</div>
-        <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.85rem' }}>{managerName}</div>
+        <div className="poster-title">{isJoint ? `Joint ${title}` : title}</div>
+        <div className="poster-winners">
+          {winners.map((w, i) => (
+            <div className="poster-winner-row" key={i}>
+              <span className="pw-team">{w.teamName}</span>
+              <span className="pw-manager">{w.managerName}</span>
+            </div>
+          ))}
+        </div>
         <div className="poster-value">{value}</div>
       </div>
     </div>

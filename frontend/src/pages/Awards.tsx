@@ -35,6 +35,7 @@ export default function Awards() {
   const [awards, setAwards] = useState<Award[]>([]);
   const [tally, setTally] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [trophyFilter, setTrophyFilter] = useState('leaders');
 
   useEffect(() => {
     setError(null);
@@ -50,6 +51,7 @@ export default function Awards() {
   const restTypes = Array.from(new Set(
     awards.filter((a) => a.award_type !== 'manager_of_week' && a.award_type !== 'donkey_of_week').map((a) => a.award_type)
   ));
+  const trophyTypes = Array.from(new Set(tally.map((t) => t.award_type)));
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -116,17 +118,41 @@ export default function Awards() {
       )}
 
       <div className="card fade-in">
-        <div className="section-heading">TROPHY CABINET</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div className="section-heading" style={{ marginBottom: 0 }}>TROPHY CABINET</div>
+          <select className="gw-select" value={trophyFilter} onChange={(e) => setTrophyFilter(e.target.value)}>
+            <option value="leaders">Leaderboard (top per award)</option>
+            {trophyTypes.map((t) => (
+              <option key={t} value={t}>{LABELS[t]?.label ?? t}</option>
+            ))}
+          </select>
+        </div>
+
         {tally.length === 0 ? (
           <p style={{ color: 'var(--grey)' }}>No awards handed out yet this season.</p>
+        ) : trophyFilter === 'leaders' ? (
+          <div className="three-col">
+            {trophyTypes.map((type, i) => {
+              const rowsForType = tally.filter((t) => t.award_type === type).sort((a, b) => b.wins - a.wins);
+              const topWins = rowsForType[0]?.wins;
+              const leaders = rowsForType.filter((r) => r.wins === topWins);
+              const meta = LABELS[type] ?? { label: type, emoji: '🎖️' };
+              return (
+                <div key={type} className="stat-tile row-in" style={{ animationDelay: `${i * 0.04}s` }}>
+                  <span className="label">{meta.emoji} {meta.label}</span>
+                  <span className="value" style={{ fontSize: '1.05rem' }}>{leaders.map((l) => l.team_name).join(' & ')}</span>
+                  <span className="mono" style={{ color: 'var(--green)', fontSize: '0.85rem' }}>{topWins} win{topWins !== 1 ? 's' : ''}</span>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="table-scroll"><table>
-            <thead><tr><th>Team</th><th>Award</th><th>Wins</th></tr></thead>
+            <thead><tr><th>Team</th><th>Wins</th></tr></thead>
             <tbody>
-              {tally.map((t, i) => (
+              {tally.filter((t) => t.award_type === trophyFilter).sort((a, b) => b.wins - a.wins).map((t, i) => (
                 <tr key={i}>
                   <td>{t.team_name}</td>
-                  <td style={{ color: 'var(--grey)' }}>{LABELS[t.award_type]?.label ?? t.award_type}</td>
                   <td className="num">{t.wins}</td>
                 </tr>
               ))}

@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ManagerModal from '../components/ManagerModal';
 import AwardPoster from '../components/AwardPoster';
+import AwardIcon from '../components/AwardIcon';
 
-const WEEKLY_AWARD_META: Record<string, { title: string; emoji: string; tone: 'green' | 'pink' | 'cyan' }> = {
-  manager_of_week: { title: 'Manager of the Week', emoji: '🏆', tone: 'green' },
-  donkey_of_week: { title: 'Donkey of the Week', emoji: '🐴', tone: 'pink' },
-  the_wall: { title: 'Best Defense', emoji: '🧱', tone: 'cyan' },
-  midfield_king: { title: 'Best Midfield', emoji: '🎯', tone: 'cyan' },
-  attack_king: { title: 'Best Attack', emoji: '⚡', tone: 'cyan' },
+const WEEKLY_AWARD_META: Record<string, { title: string; icon: 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack'; tone: 'green' | 'pink' | 'cyan' }> = {
+  manager_of_week: { title: 'Manager of the Week', icon: 'motw', tone: 'green' },
+  donkey_of_week: { title: 'Donkey of the Week', icon: 'dotw', tone: 'pink' },
+  the_wall: { title: 'Best Defense', icon: 'defense', tone: 'cyan' },
+  midfield_king: { title: 'Best Midfield', icon: 'midfield', tone: 'cyan' },
+  attack_king: { title: 'Best Attack', icon: 'attack', tone: 'cyan' },
 };
 
 export default function Home() {
@@ -101,17 +102,16 @@ export default function Home() {
             <div className="two-col-even">
               {primaryFeatured.map(({ type, winners }, i) => {
                 const meta = WEEKLY_AWARD_META[type];
-                const isJoint = winners.length > 1;
                 return (
                   <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
                     <AwardPoster
                       tone={meta.tone}
-                      emoji={meta.emoji}
-                      title={isJoint ? `Joint ${meta.title}` : meta.title}
-                      managerName={winners.map((w) => w.manager_name).join(' & ')}
-                      teamName={winners.map((w) => w.team_name).join(' & ')}
+                      icon={meta.icon}
+                      title={meta.title}
+                      winners={winners.map((w) => ({ managerName: w.manager_name, teamName: w.team_name }))}
                       value={`${winners[0].value} pts`}
                       flyerImage={flyers[type]}
+                      iconSize={56}
                     />
                   </div>
                 );
@@ -122,17 +122,16 @@ export default function Home() {
               <div className="three-col">
                 {secondaryFeatured.map(({ type, winners }, i) => {
                   const meta = WEEKLY_AWARD_META[type];
-                  const isJoint = winners.length > 1;
                   return (
                     <div key={type} className={`fade-in fade-in-${Math.min(i + 1, 3)}`}>
                       <AwardPoster
                         tone={meta.tone}
-                        emoji={meta.emoji}
-                        title={isJoint ? `Joint ${meta.title}` : meta.title}
-                        managerName={winners.map((w) => w.manager_name).join(' & ')}
-                        teamName={winners.map((w) => w.team_name).join(' & ')}
+                        icon={meta.icon}
+                        title={meta.title}
+                        winners={winners.map((w) => ({ managerName: w.manager_name, teamName: w.team_name }))}
                         value={`${winners[0].value} pts`}
                         flyerImage={flyers[type]}
+                        iconSize={38}
                       />
                     </div>
                   );
@@ -141,14 +140,15 @@ export default function Home() {
             )}
 
             <div className="card fade-in fade-in-3">
-              <div className="section-heading">⭐ HALL OF FAME</div>
+              <div className="section-heading">HALL OF FAME</div>
               {hof.length === 0 ? (
                 <p style={{ color: 'var(--grey)' }}>No one's hit 100+ points without a chip yet — it'll show up here the moment they do.</p>
               ) : (
                 <div style={{ display: 'grid', gap: '0.6rem' }}>
                   {hof.map((h, i) => (
-                    <div key={i} className="row-in" style={{ animationDelay: `${i * 0.04}s`, display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>
-                      <span>
+                    <div key={i} className="row-in" style={{ animationDelay: `${i * 0.04}s`, display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--line)', paddingBottom: '0.6rem' }}>
+                      <AwardIcon kind="hof" size={30} />
+                      <span style={{ flex: 1 }}>
                         <button onClick={() => openManager(h.entry_id)} style={linkBtn}>{h.team_name}</button>
                         <span style={{ color: 'var(--grey)' }}> — GW{h.gameweek}</span>
                       </span>
@@ -178,7 +178,7 @@ export default function Home() {
             </div>
 
             <div className="card fade-in fade-in-3">
-              <div className="section-heading">💰 PRICE CHANGES (SEASON)</div>
+              <div className="section-heading">PRICE CHANGES (SEASON)</div>
               {prices.risers.length === 0 && prices.fallers.length === 0 ? (
                 <p style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No price changes yet this season.</p>
               ) : (

@@ -10,12 +10,36 @@ leagueRouter.get('/standings', asyncHandler(async (_req, res) => {
   const { rows } = await query(`
     SELECT DISTINCT ON (gs.entry_id)
       m.entry_id, m.manager_name, m.team_name,
-      gs.total_points_after, gs.overall_rank, gs.gameweek AS last_gameweek
+      gs.total_points_after, gs.overall_rank, gs.gameweek AS last_gameweek,
+      gs.gw_points_net AS gw_points
     FROM gameweek_stats gs
     JOIN managers m ON m.entry_id = gs.entry_id
     ORDER BY gs.entry_id, gs.gameweek DESC
   `);
   rows.sort((a, b) => b.total_points_after - a.total_points_after);
+
+  // Rank movement vs the previous gameweek — for the red/green arrows.
+  // Compares LEAGUE rank (position in this table), not FPL's global rank.
+  const { rows: gwList } = await query(
+    'SELECT DISTINCT gameweek FROM gameweek_stats ORDER BY gameweek DESC LIMIT 2'
+  );
+  if (gwList.length === 2) {
+    const [currentGw, prevGw] = gwList.map((r) => r.gameweek);
+    const { rows: prevRows } = await query(
+      'SELECT entry_id, total_points_after FROM gameweek_stats WHERE gameweek = $1',
+      [prevGw]
+    );
+    const prevRanked = [...prevRows].sort((a, b) => b.total_points_after - a.total_points_after);
+    const prevRankByEntry = new Map(prevRanked.map((r, i) => [r.entry_id, i + 1]));
+    rows.forEach((r, i) => {
+      const currentRank = i + 1;
+      const prevRank = prevRankByEntry.get(r.entry_id);
+      r.rank_change = prevRank != null ? prevRank - currentRank : null; // positive = moved up
+    });
+  } else {
+    rows.forEach((r) => { r.rank_change = null; });
+  }
+
   res.json(rows);
 }));
 

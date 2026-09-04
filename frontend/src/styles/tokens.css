@@ -147,16 +147,26 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 }
 
 .gw-select {
+  appearance: none;
+  -webkit-appearance: none;
   font-family: var(--font-body);
   font-weight: 700;
-  background: rgba(0,0,0,0.3);
+  font-size: 0.85rem;
+  background-color: rgba(0,0,0,0.3);
+  background-image: linear-gradient(135deg, transparent 50%, var(--green) 50%), linear-gradient(45deg, var(--green) 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
   color: var(--white);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  padding: 0.5rem 2rem 0.5rem 1rem;
   cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
+.gw-select:hover { border-color: rgba(0,255,133,0.4); background-color: rgba(0,255,133,0.06); }
 .gw-select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+.gw-select option { background: var(--purple-deep); color: var(--white); }
 
 /* Motion */
 @keyframes fadeInUp {
@@ -385,3 +395,39 @@ tr { transition: background 0.15s ease; }
   .two-col-even { grid-template-columns: 1fr; }
   nav { gap: 0.8rem !important; width: 100%; justify-content: space-between; }
 }
+
+/* Rank movement arrows on Standings */
+.rank-arrow { font-size: 0.7rem; font-weight: 700; margin-left: 0.35rem; }
+.rank-arrow--up { color: var(--green); }
+.rank-arrow--down { color: var(--pink); }
+.rank-arrow--same { color: var(--grey); }
+
+/* Small award badges shown next to a team row (this week's winners) */
+.award-badge-row { display: inline-flex; gap: 0.25rem; margin-left: 0.5rem; vertical-align: middle; }
+.award-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%; font-size: 0.72rem;
+  background: rgba(255,255,255,0.08);
+}
+
+/* Legend strip */
+.legend-strip {
+  display: flex; gap: 1.1rem; flex-wrap: wrap; align-items: center;
+  font-size: 0.78rem; color: var(--grey);
+}
+.legend-strip .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+
+/* Joint-winner poster layout — stacked rows instead of a single cramped
+   "&"-joined line, and a visually fuller layout for the solo-winner case */
+.poster-winners { display: grid; gap: 0.3rem; margin-top: 0.2rem; }
+.poster-winner-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.poster-winner-row .pw-team { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; }
+.poster-winner-row .pw-manager { font-size: 0.72rem; color: rgba(255,255,255,0.65); }
+
+/* Trophy cabinet compact leaderboard rows */
+.trophy-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.trophy-rank { width: 22px; text-align: center; font-family: var(--font-mono); color: var(--grey); font-size: 0.8rem; }
