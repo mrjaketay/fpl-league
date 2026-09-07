@@ -3,6 +3,15 @@ type Kind = 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack' | 'hof';
 // Small branded icon set for awards — replaces plain emoji with something
 // that matches the site's own gradient/shield visual language.
 export default function AwardIcon({ kind, size = 40 }: { kind: Kind; size?: number }) {
+  // Real emoji requested for these two specifically — trophy and donkey
+  // read better as actual emoji than a vector reinterpretation of them.
+  if (kind === 'motw') {
+    return <span style={{ fontSize: size * 1.15, lineHeight: 1, display: 'inline-block' }}>🏆</span>;
+  }
+  if (kind === 'dotw') {
+    return <span style={{ fontSize: size * 1.15, lineHeight: 1, display: 'inline-block' }}>🫏</span>;
+  }
+
   const id = `ai-${kind}`;
   const gradId = `${id}-g`;
 
@@ -24,21 +33,6 @@ export default function AwardIcon({ kind, size = 40 }: { kind: Kind; size?: numb
           <stop offset="100%" stopColor={c2} />
         </linearGradient>
       </defs>
-
-      {kind === 'motw' && (
-        <path fill={`url(#${gradId})`} d="M24 4l4.5 9.2L38.6 15l-7.3 7.1L33 32l-9-4.7L15 32l1.7-9.9L9.4 15l10.1-1.8L24 4z" />
-      )}
-
-      {kind === 'dotw' && (
-        <g fill={`url(#${gradId})`}>
-          <ellipse cx="24" cy="27" rx="12" ry="10" />
-          <circle cx="24" cy="14" r="8" />
-          <path d="M17 8 L14 2 L19 6 Z" />
-          <path d="M31 8 L34 2 L29 6 Z" />
-          <circle cx="20" cy="14" r="1.6" fill="#1c0021" />
-          <circle cx="28" cy="14" r="1.6" fill="#1c0021" />
-        </g>
-      )}
 
       {kind === 'defense' && (
         <path fill={`url(#${gradId})`} d="M24 4 L40 10 V22 C40 32 33 40 24 44 C15 40 8 32 8 22 V10 Z" />

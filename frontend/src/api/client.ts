@@ -23,7 +23,7 @@ async function request(path: string, options: RequestInit = {}) {
 
 export const api = {
   info: () => request('/api/league/info'),
-  standings: () => request('/api/league/standings'),
+  standings: (gw?: number) => request(gw ? `/api/league/standings?gw=${gw}` : '/api/league/standings'),
   form: () => request('/api/league/form'),
   gameweekStats: (gw: number) => request(`/api/league/gameweek/${gw}`),
   gameweekAwards: (gw: number) => request(`/api/league/awards/gameweek/${gw}`),

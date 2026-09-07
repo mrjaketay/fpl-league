@@ -6,19 +6,26 @@ const CHIP_LABELS: Record<string, string> = {
   wildcard: 'Wildcard', free_hit: 'Free Hit', bench_boost: 'Bench Boost', triple_captain: 'Triple Captain',
 };
 
-function initials(name: string) {
-  return name.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase();
+// Consistent per-PL-team shirt color, same hashing idea as TeamBadge —
+// we don't have official kit colors from the API, so this gives each
+// real team a stable, distinct shirt color instead of using one flat
+// color for everyone.
+function shirtColor(teamShort: string): string {
+  let hash = 0;
+  for (let i = 0; i < teamShort.length; i++) hash = teamShort.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 55%, 38%)`;
 }
 
-function PitchPlayer({ p }: { p: any }) {
+function FplPlayer({ p }: { p: any }) {
   return (
-    <div className="pitch-player">
-      <div className="avatar">
-        {initials(p.web_name)}
-        {p.is_captain && <span className="armband">C</span>}
-        {p.is_vice_captain && <span className="armband" style={{ background: 'var(--cyan)' }}>V</span>}
+    <div className="fpl-player">
+      <div className="fpl-shirt" style={{ background: shirtColor(p.team_short) }}>
+        {p.is_captain && <span className="fpl-armband">C</span>}
+        {p.is_vice_captain && <span className="fpl-armband fpl-armband--vc">V</span>}
       </div>
-      <span className="pname">{p.web_name}</span>
+      <div className="fpl-name-pill">{p.web_name}</div>
+      <div className="fpl-points-pill">{p.total_points}</div>
     </div>
   );
 }
@@ -86,10 +93,10 @@ export default function TeamModal({
         {data && !data.notAvailable && !loading && (
           <div style={{ marginTop: '1rem' }}>
             <div className="pitch">
-              <div className="pitch-row">{fwd.map((p: any, i: number) => <PitchPlayer key={i} p={p} />)}</div>
-              <div className="pitch-row">{mid.map((p: any, i: number) => <PitchPlayer key={i} p={p} />)}</div>
-              <div className="pitch-row">{def.map((p: any, i: number) => <PitchPlayer key={i} p={p} />)}</div>
-              <div className="pitch-row">{gk.map((p: any, i: number) => <PitchPlayer key={i} p={p} />)}</div>
+              <div className="pitch-row">{fwd.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>
+              <div className="pitch-row">{mid.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>
+              <div className="pitch-row">{def.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>
+              <div className="pitch-row">{gk.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>
             </div>
 
             {bench.length > 0 && (
@@ -97,10 +104,7 @@ export default function TeamModal({
                 <span className="bench-label">Substitutes</span>
                 <div className="bench-row">
                   {bench.map((p: any, i: number) => (
-                    <div key={i} className="bench-player">
-                      <span className="bnum">{i + 12}</span>
-                      <span className="bname">{p.web_name}</span>
-                    </div>
+                    <FplPlayer key={i} p={p} />
                   ))}
                 </div>
               </div>

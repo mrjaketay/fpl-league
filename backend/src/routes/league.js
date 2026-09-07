@@ -1,34 +1,39 @@
 import { Router } from 'express';
 import { query } from '../db/pool.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { fetchBootstrap, fetchEntryPicks } from '../services/fplApi.js';
+import { fetchBootstrap, fetchEntryPicks, fetchEventLive } from '../services/fplApi.js';
 
 export const leagueRouter = Router();
 
 // Season standings, derived from the latest gameweek's cumulative total.
-leagueRouter.get('/standings', asyncHandler(async (_req, res) => {
-  const { rows } = await query(`
-    SELECT DISTINCT ON (gs.entry_id)
-      m.entry_id, m.manager_name, m.team_name,
-      gs.total_points_after, gs.overall_rank, gs.gameweek AS last_gameweek,
-      gs.gw_points_net AS gw_points
-    FROM gameweek_stats gs
-    JOIN managers m ON m.entry_id = gs.entry_id
-    ORDER BY gs.entry_id, gs.gameweek DESC
-  `);
+leagueRouter.get('/standings', asyncHandler(async (req, res) => {
+  // ?gw=5 shows the table as it stood after that gameweek. No param =
+  // latest gameweek we have data for (today's standings).
+  let gw = req.query.gw ? Number(req.query.gw) : null;
+  if (!gw) {
+    const { rows: latest } = await query('SELECT MAX(gameweek) AS latest FROM gameweek_stats');
+    gw = latest[0]?.latest;
+  }
+  if (!gw) return res.json([]);
+
+  const { rows } = await query(
+    `SELECT m.entry_id, m.manager_name, m.team_name,
+            gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points
+     FROM gameweek_stats gs
+     JOIN managers m ON m.entry_id = gs.entry_id
+     WHERE gs.gameweek = $1`,
+    [gw]
+  );
   rows.sort((a, b) => b.total_points_after - a.total_points_after);
 
-  // Rank movement vs the previous gameweek — for the red/green arrows.
-  // Compares LEAGUE rank (position in this table), not FPL's global rank.
-  const { rows: gwList } = await query(
-    'SELECT DISTINCT gameweek FROM gameweek_stats ORDER BY gameweek DESC LIMIT 2'
+  // Rank movement vs the gameweek before the one being viewed — for the
+  // red/green arrows. Compares LEAGUE rank (position in this table), not
+  // FPL's global rank (which isn't shown here at all anymore).
+  const { rows: prevRows } = await query(
+    'SELECT entry_id, total_points_after FROM gameweek_stats WHERE gameweek = $1',
+    [gw - 1]
   );
-  if (gwList.length === 2) {
-    const [currentGw, prevGw] = gwList.map((r) => r.gameweek);
-    const { rows: prevRows } = await query(
-      'SELECT entry_id, total_points_after FROM gameweek_stats WHERE gameweek = $1',
-      [prevGw]
-    );
+  if (prevRows.length > 0) {
     const prevRanked = [...prevRows].sort((a, b) => b.total_points_after - a.total_points_after);
     const prevRankByEntry = new Map(prevRanked.map((r, i) => [r.entry_id, i + 1]));
     rows.forEach((r, i) => {
@@ -368,19 +373,24 @@ leagueRouter.get('/team/:entryId/:gw', asyncHandler(async (req, res) => {
     throw err;
   }
 
-  const bootstrap = await fetchBootstrap();
+  const [bootstrap, live] = await Promise.all([fetchBootstrap(), fetchEventLive(Number(gw))]);
+  const liveById = new Map(live.elements.map((e) => [e.id, e.stats.total_points]));
 
   const POSITION_NAMES = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
   const picks = picksData.picks.map((p) => {
     const player = bootstrap.elements.find((e) => e.id === p.element);
+    const basePoints = liveById.get(p.element) ?? 0;
     return {
       web_name: player?.web_name ?? `#${p.element}`,
+      team_short: bootstrap.teams.find((t) => t.id === player?.team)?.short_name ?? '',
       position: POSITION_NAMES[player?.element_type] ?? '?',
       is_captain: p.is_captain,
       is_vice_captain: p.is_vice_captain,
       multiplier: p.multiplier,
       starting: p.multiplier > 0,
       pick_position: p.position,
+      base_points: basePoints, // player's own points, before captain multiplier
+      total_points: basePoints * (p.multiplier || 1), // what it actually counted for (0 if benched)
     };
   }).sort((a, b) => a.pick_position - b.pick_position);
 

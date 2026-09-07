@@ -35,6 +35,7 @@ function downloadJson(data: unknown, filename: string) {
 
 export default function Admin() {
   const [log, setLog] = useState<string[]>([]);
+  const [quickStats, setQuickStats] = useState<any>(null);
   const [gw, setGw] = useState(1);
   const [startGw, setStartGw] = useState(1);
   const [totalGw, setTotalGw] = useState(38);
@@ -48,6 +49,11 @@ export default function Admin() {
   useEffect(() => {
     api.flyers(flyerGw).then(setFlyerPreviews).catch(() => setFlyerPreviews({}));
   }, [flyerGw]);
+
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    api.quickStats().then(setQuickStats).catch(() => {});
+  }, []);
 
   async function handleFlyerUpload(awardType: string, file: File) {
     setFlyerBusy(awardType);
@@ -114,6 +120,28 @@ export default function Admin() {
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <h1 style={{ fontSize: '1.3rem' }}>Admin Dashboard</h1>
+
+      {quickStats && (
+        <div className="card fade-in" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '1.1rem 1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+            <span className="mono" style={{ color: 'var(--green)', fontWeight: 700 }}>{quickStats.active_managers}</span>
+            <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>Active Managers</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+            <span className="live-dot" />
+            <span className="mono" style={{ color: 'var(--cyan)', fontWeight: 700 }}>GW {quickStats.current_gameweek ?? '—'}</span>
+          </div>
+          {quickStats.season_leader && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>👑 Leader:</span>
+              <span style={{ fontWeight: 600 }}>{quickStats.season_leader.team_name}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="dashboard-grid">
       <div className="card fade-in">
         <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Sync Data</h2>
         <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
@@ -179,7 +207,7 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="card fade-in fade-in-3">
+      <div className="card fade-in fade-in-3 span-2">
         <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>League Settings</h2>
         <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
           These control the rules behind the awards above.
@@ -264,7 +292,7 @@ export default function Admin() {
         </button>
       </div>
 
-      <div className="card fade-in">
+      <div className="card fade-in span-2">
         <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Weekly Award Flyers</h2>
         <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
           Upload a custom graphic for any of the five weekly awards below — it replaces the plain
@@ -303,6 +331,8 @@ export default function Admin() {
             </div>
           ))}
         </div>
+      </div>
+
       </div>
 
       <div className="card fade-in">
