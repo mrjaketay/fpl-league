@@ -167,6 +167,48 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .gw-select:hover { border-color: rgba(0,255,133,0.4); background-color: rgba(0,255,133,0.06); }
 .gw-select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
 .gw-select option { background: var(--purple-deep); color: var(--white); }
+/* Sitewide tooltip utility — add class="tip" and data-tip="..." to any
+   element to get a small styled tooltip on hover, instead of relying on
+   the plain browser default title tooltip. */
+.tip { position: relative; cursor: help; }
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #0d0212;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 100;
+}
+.tip::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent;
+  border-top-color: #0d0212;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 100;
+}
+.tip:hover::after, .tip:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 /* Admin dashboard grid — panels arrange themselves instead of stacking
    full-width one after another. .span-2 lets a panel take two columns
@@ -179,6 +221,26 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 }
 .dashboard-grid .span-2 { grid-column: span 2; }
 @media (max-width: 900px) { .dashboard-grid .span-2 { grid-column: span 1; } }
+
+/* Admin sidebar layout */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 760px) { .admin-layout { grid-template-columns: 1fr; } }
+.admin-sidebar { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.75rem; position: sticky; top: 1rem; }
+.admin-sidebar-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: transparent; border: none; border-left: 3px solid transparent;
+  color: var(--grey); font-family: var(--font-body); font-weight: 600; font-size: 0.88rem;
+  padding: 0.6rem 0.75rem; border-radius: 6px; cursor: pointer; text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.admin-sidebar-item:hover { background: rgba(255,255,255,0.05); color: var(--white); }
+.admin-sidebar-item--active { background: rgba(0,255,133,0.1); color: var(--green); border-left-color: var(--green); }
+.admin-sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
 
 /* Motion */
 @keyframes fadeInUp {
@@ -281,28 +343,24 @@ tr { transition: background 0.15s ease; }
 }
 .modal-close:hover { background: rgba(246,246,250,0.18); }
 
-/* Football pitch team view */
+/* Football pitch team view — proportional zones (space-between) instead
+   of a uniform small gap, so forwards genuinely sit near the top third,
+   defenders near the bottom third, and the goalkeeper right at the back —
+   matching where the drawn penalty boxes actually are. */
 .pitch {
-  background: linear-gradient(180deg, #0a5c33 0%, #0d7a42 50%, #0a5c33 100%);
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0 20px, transparent 20px 40px),
+    linear-gradient(180deg, #0a6b3a 0%, #0d7a42 50%, #0a6b3a 100%);
   border-radius: var(--radius) var(--radius) 0 0;
   border: 1px solid rgba(255,255,255,0.15);
   border-bottom: none;
-  padding: 1.1rem 0.5rem;
-  position: relative;
-  display: grid;
-  gap: 1.1rem;
-}
-.pitch::before {
-  content: '';
-  position: absolute; left: 50%; top: 8%; bottom: 8%;
-  width: 1px; background: rgba(255,255,255,0.25);
-  transform: translateX(-50%);
-}
-.pitch::after {
-  content: '';
-  position: absolute; left: 50%; top: 50%; width: 70px; height: 70px;
-  border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
-  transform: translate(-50%, -50%);
+  aspect-ratio: 3 / 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.6rem 0.5rem;
 }
 .pitch-row { display: flex; justify-content: center; gap: 0.7rem; flex-wrap: wrap; position: relative; z-index: 1; }
 

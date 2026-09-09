@@ -168,21 +168,42 @@ leagueRouter.get('/h2h/gameweek/:gw', asyncHandler(async (req, res) => {
 
 // H2H season table — wins, draws, losses per manager. Only counts fixtures
 // that have been settled (i.e. that gameweek's stats have been synced).
+// Proper football-style league table: Played, Won, Drawn, Lost, Points
+// For/Against (using each manager's net FPL points as the "score" that
+// gameweek), goal difference equivalent, and league points (3/1/0).
+// Only counts fixtures that have actually been settled — a genuine draw
+// (settled, no winner) is now distinguishable from "not played yet"
+// (never settled) via settled_at, which a plain winner_entry_id check
+// couldn't tell apart.
 leagueRouter.get('/h2h/table', asyncHandler(async (_req, res) => {
   const { rows } = await query(`
-    WITH involved AS (
-      SELECT entry_id_1 AS entry_id, winner_entry_id, entry_id_1, entry_id_2 FROM h2h_fixtures
-      WHERE winner_entry_id IS NOT NULL OR entry_id_1 IS NOT NULL
+    WITH results AS (
+      SELECT entry_id_1 AS entry_id, entry_id_2 AS opponent_id, winner_entry_id, gameweek
+      FROM h2h_fixtures WHERE settled_at IS NOT NULL
       UNION ALL
-      SELECT entry_id_2 AS entry_id, winner_entry_id, entry_id_1, entry_id_2 FROM h2h_fixtures
+      SELECT entry_id_2 AS entry_id, entry_id_1 AS opponent_id, winner_entry_id, gameweek
+      FROM h2h_fixtures WHERE settled_at IS NOT NULL
+    ),
+    with_points AS (
+      SELECT r.entry_id, r.winner_entry_id,
+             gs_for.gw_points_net AS points_for, gs_against.gw_points_net AS points_against
+      FROM results r
+      JOIN gameweek_stats gs_for ON gs_for.entry_id = r.entry_id AND gs_for.gameweek = r.gameweek
+      JOIN gameweek_stats gs_against ON gs_against.entry_id = r.opponent_id AND gs_against.gameweek = r.gameweek
     )
     SELECT m.entry_id, m.manager_name, m.team_name,
-      COUNT(*) FILTER (WHERE i.winner_entry_id = m.entry_id) AS wins,
-      COUNT(*) FILTER (WHERE i.winner_entry_id IS NOT NULL AND i.winner_entry_id != m.entry_id) AS losses
+      COUNT(wp.entry_id) AS played,
+      COUNT(*) FILTER (WHERE wp.winner_entry_id = m.entry_id) AS won,
+      COUNT(*) FILTER (WHERE wp.winner_entry_id IS NULL AND wp.entry_id IS NOT NULL) AS drawn,
+      COUNT(*) FILTER (WHERE wp.winner_entry_id IS NOT NULL AND wp.winner_entry_id != m.entry_id) AS lost,
+      COALESCE(SUM(wp.points_for), 0) AS points_for,
+      COALESCE(SUM(wp.points_against), 0) AS points_against,
+      COALESCE(SUM(wp.points_for) - SUM(wp.points_against), 0) AS diff,
+      COALESCE(SUM(CASE WHEN wp.winner_entry_id = m.entry_id THEN 3 WHEN wp.entry_id IS NOT NULL AND wp.winner_entry_id IS NULL THEN 1 ELSE 0 END), 0) AS league_points
     FROM managers m
-    LEFT JOIN involved i ON i.entry_id = m.entry_id
+    LEFT JOIN with_points wp ON wp.entry_id = m.entry_id
     GROUP BY m.entry_id, m.manager_name, m.team_name
-    ORDER BY wins DESC
+    ORDER BY league_points DESC, diff DESC
   `);
   res.json(rows);
 }));

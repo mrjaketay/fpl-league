@@ -66,18 +66,18 @@ export default function Home() {
             <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>Active Managers</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-            <span className="live-dot" />
+            <span className="live-dot tip" data-tip="Updates automatically every ~10 minutes" />
             <span className="mono" style={{ color: 'var(--cyan)', fontWeight: 700 }}>GW {quickStats.current_gameweek ?? '—'}</span>
           </div>
           {quickStats.season_leader && (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>👑 Leader:</span>
+              <span className="tip" data-tip="Highest total points in the league right now" style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>👑 Leader:</span>
               <span style={{ fontWeight: 600 }}>{quickStats.season_leader.team_name}</span>
             </div>
           )}
           {quickStats.chief_donkey && (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>🐴 Chief Donkey:</span>
+              <span className="tip" data-tip="Most Donkey of the Week wins this season" style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>🐴 Chief Donkey:</span>
               <span style={{ fontWeight: 600 }}>{quickStats.chief_donkey.team_name}</span>
               <span className="mono" style={{ color: 'var(--pink)', fontSize: '0.8rem' }}>({quickStats.chief_donkey.wins})</span>
             </div>

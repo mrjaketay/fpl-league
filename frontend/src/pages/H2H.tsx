@@ -41,15 +41,37 @@ export default function H2H() {
       </div>
 
       <div className="card fade-in fade-in-1">
-        <div className="section-heading">SEASON H2H TABLE</div>
+        <div className="section-heading" data-tip="Standard 3 points for a win, 1 for a draw, sorted by League Points then Diff">
+          SEASON H2H LEAGUE TABLE
+        </div>
         <div className="table-scroll"><table>
-          <thead><tr><th>Team</th><th>Wins</th><th>Losses</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th title="Played">P</th>
+              <th title="Won">W</th>
+              <th title="Drawn">D</th>
+              <th title="Lost">L</th>
+              <th title="Points scored, for">PF</th>
+              <th title="Points scored, against">PA</th>
+              <th title="Points difference (PF - PA)">Diff</th>
+              <th title="League points: 3 for a win, 1 for a draw">Pts</th>
+            </tr>
+          </thead>
           <tbody>
-            {table.map((t) => (
-              <tr key={t.entry_id}>
-                <td>{t.team_name}</td>
-                <td className="num" style={{ color: 'var(--green)' }}>{t.wins}</td>
-                <td className="num" style={{ color: 'var(--pink)' }}>{t.losses}</td>
+            {table.map((t, i) => (
+              <tr key={t.entry_id} className="row-in" style={{ animationDelay: `${i * 0.03}s` }}>
+                <td style={{ fontWeight: i === 0 ? 700 : 400, color: i === 0 ? 'var(--green)' : 'var(--white)' }}>{t.team_name}</td>
+                <td className="num">{t.played}</td>
+                <td className="num">{t.won}</td>
+                <td className="num">{t.drawn}</td>
+                <td className="num">{t.lost}</td>
+                <td className="num">{t.points_for}</td>
+                <td className="num">{t.points_against}</td>
+                <td className="num" style={{ color: Number(t.diff) > 0 ? 'var(--green)' : Number(t.diff) < 0 ? 'var(--pink)' : 'var(--grey)' }}>
+                  {Number(t.diff) > 0 ? '+' : ''}{t.diff}
+                </td>
+                <td className="num" style={{ fontWeight: 700 }}>{t.league_points}</td>
               </tr>
             ))}
           </tbody>

@@ -92,6 +92,12 @@ CREATE INDEX IF NOT EXISTS idx_gameweek_stats_gw ON gameweek_stats(gameweek);
 -- Added for Manager of the Month — safe to re-run (IF NOT EXISTS) against
 -- a database that already has the awards table from before this column existed.
 ALTER TABLE awards ADD COLUMN IF NOT EXISTS month INTEGER;
+
+-- Added to properly distinguish "not yet played" (NULL winner, not
+-- settled) from "genuine draw" (NULL winner, but settled) in H2H —
+-- previously both looked identical, which made an honest league table
+-- impossible.
+ALTER TABLE h2h_fixtures ADD COLUMN IF NOT EXISTS settled_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_awards_type_gw ON awards(award_type, gameweek);
 CREATE INDEX IF NOT EXISTS idx_h2h_gw ON h2h_fixtures(gameweek);
 

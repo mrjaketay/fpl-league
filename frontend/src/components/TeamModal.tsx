@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from './GameweekSelect';
+import PitchMarkings from './PitchMarkings';
 
 const CHIP_LABELS: Record<string, string> = {
   wildcard: 'Wildcard', free_hit: 'Free Hit', bench_boost: 'Bench Boost', triple_captain: 'Triple Captain',
@@ -93,6 +94,7 @@ export default function TeamModal({
         {data && !data.notAvailable && !loading && (
           <div style={{ marginTop: '1rem' }}>
             <div className="pitch">
+              <PitchMarkings />
               <div className="pitch-row">{fwd.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>
               <div className="pitch-row">{mid.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>
               <div className="pitch-row">{def.map((p: any, i: number) => <FplPlayer key={i} p={p} />)}</div>

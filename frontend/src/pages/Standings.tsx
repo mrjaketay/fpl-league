@@ -36,8 +36,8 @@ function RankBadge({ rank }: { rank: number }) {
 function RankArrow({ change }: { change: number | null }) {
   if (change == null || change === 0) return null;
   return change > 0
-    ? <span className="rank-arrow rank-arrow--up">▲</span>
-    : <span className="rank-arrow rank-arrow--down">▼</span>;
+    ? <span className="rank-arrow rank-arrow--up tip" data-tip={`Up ${change} place${change !== 1 ? 's' : ''} since last gameweek`}>▲</span>
+    : <span className="rank-arrow rank-arrow--down tip" data-tip={`Down ${Math.abs(change)} place${Math.abs(change) !== 1 ? 's' : ''} since last gameweek`}>▼</span>;
 }
 
 export default function Standings() {
@@ -109,7 +109,9 @@ export default function Standings() {
       {leader && (
         <div className="card card--hero fade-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-            <GraffitiTrophy size={58} />
+            <span className="tip" data-tip="Current League Leader">
+              <GraffitiTrophy size={58} />
+            </span>
             <div>
               <span className="pill pill--green">League Leader</span>
               <h2 style={{ fontSize: '1.4rem', marginTop: '0.5rem' }}>{leader.team_name}</h2>
@@ -172,7 +174,7 @@ export default function Standings() {
                       </button>
                       <span className="award-badge-row">
                         {awardsFor(r.entry_id).map((a, j) => (
-                          <span key={j} className="award-badge" title={AWARD_ICON_MAP[a.award_type].title}>
+                          <span key={j} className="award-badge tip" data-tip={AWARD_ICON_MAP[a.award_type].title}>
                             <AwardIcon kind={AWARD_ICON_MAP[a.award_type].kind} size={14} />
                           </span>
                         ))}

@@ -53,6 +53,8 @@ export async function generateSeasonFixtures(startGameweek, totalGameweeks) {
 }
 
 // Settles every fixture for a gameweek once gameweek_stats is populated.
+// Sets settled_at so the league table can tell "genuine draw" (settled,
+// winner NULL) apart from "not played yet" (never settled).
 export async function settleH2H(gameweek) {
   const { rows: fixtures } = await query('SELECT * FROM h2h_fixtures WHERE gameweek = $1', [gameweek]);
   let settled = 0;
@@ -64,7 +66,7 @@ export async function settleH2H(gameweek) {
     if (rows.length < 2) continue; // one or both not synced yet
     const [p1, p2] = rows;
     const winner = p1.gw_points_net === p2.gw_points_net ? null : p1.gw_points_net > p2.gw_points_net ? p1.entry_id : p2.entry_id;
-    await query('UPDATE h2h_fixtures SET winner_entry_id = $1 WHERE id = $2', [winner, f.id]);
+    await query('UPDATE h2h_fixtures SET winner_entry_id = $1, settled_at = now() WHERE id = $2', [winner, f.id]);
     settled += 1;
   }
   return { gameweek, settled };
