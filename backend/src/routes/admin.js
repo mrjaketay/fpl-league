@@ -15,7 +15,7 @@ adminRouter.use(requireAdmin);
 // ':gw' route came first, a request to /sync/current would match IT
 // instead, treating the literal word "current" as the gameweek number
 // (Number("current") = NaN), which is exactly the bug that caused the
-// "event/NaN/live" 404 you hit.
+// "event/NaN/live" 404 I ran into while testing this.
 
 // Convenience: sync whatever the current live/most-recent gameweek is.
 adminRouter.post('/sync/current', asyncHandler(async (_req, res) => {

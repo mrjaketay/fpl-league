@@ -1,6 +1,6 @@
-// Reusable gameweek dropdown — replaces plain number inputs everywhere
-// a gameweek needs picking, per your request that every GW field be a
-// proper dropdown instead of a bare number box.
+// Reusable gameweek dropdown — I wanted every GW field to be a proper
+// dropdown instead of a bare number box, so this replaces plain number
+// inputs everywhere a gameweek needs picking.
 export default function GameweekSelect({
   value,
   onChange,

@@ -3,13 +3,13 @@ name: Refresh FPL Data
 on:
   schedule:
     # Every 10 minutes. Render's free web service sleeps after 15 minutes
-    # of no traffic — pinging every 30 min (the original interval) meant
+    # of no traffic — pinging every 30 min (my original interval) meant
     # the backend was actually asleep most of the time between pings,
-    # causing the ~50s cold-start delay you noticed. Every 10 minutes
+    # causing the ~50s cold-start delay I noticed. Every 10 minutes
     # keeps it reliably awake, with margin for GitHub Actions' scheduling
     # lag (it doesn't guarantee exact timing, especially on private repos).
     - cron: '*/10 * * * *'
-  workflow_dispatch: {} # lets you trigger it manually from the Actions tab too
+  workflow_dispatch: {} # lets me trigger it manually from the Actions tab too
 
 jobs:
   refresh:

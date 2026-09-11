@@ -37,6 +37,7 @@ export const api = {
   hallOfFame: () => request('/api/league/awards/hall-of-fame'),
   longevity: () => request('/api/league/stats/longevity'),
   priceChanges: () => request('/api/league/price-changes'),
+  homeBundle: () => request('/api/league/home-bundle'),
   team: (entryId: number, gw: number) => request(`/api/league/team/${entryId}/${gw}`),
   flyers: (gw: number) => request(`/api/league/flyers/${gw}`),
   monthlyAward: (month: number) => request(`/api/league/awards/monthly/${month}`),

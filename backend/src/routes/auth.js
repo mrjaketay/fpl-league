@@ -26,8 +26,8 @@ authRouter.post('/login', asyncHandler(async (req, res) => {
 }));
 
 // One-time bootstrap route to create the first admin account.
-// Protected by a setup key (set ADMIN_SETUP_KEY in env) — disable or remove
-// after you've created your admins.
+// Protected by a setup key (set ADMIN_SETUP_KEY in env) — I'll disable or
+// remove this once I've created my admin accounts.
 authRouter.post('/setup', asyncHandler(async (req, res) => {
   const { email, password, name, setupKey } = req.body;
   if (setupKey !== process.env.ADMIN_SETUP_KEY) {

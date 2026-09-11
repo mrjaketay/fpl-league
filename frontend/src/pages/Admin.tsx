@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { api, isLoggedIn, clearToken } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
@@ -129,8 +130,11 @@ export default function Admin() {
   ];
 
   return (
-    <div style={{ display: 'grid', gap: '1.25rem' }}>
-      <h1 style={{ fontSize: '1.3rem' }}>Admin Dashboard</h1>
+    <div className="admin-page">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <h1 style={{ fontSize: '1.3rem' }}>Admin Dashboard</h1>
+        <Link to="/" style={{ fontSize: '0.85rem' }}>← Back to site</Link>
+      </div>
 
       {quickStats && (
         <div className="card fade-in" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '1.1rem 1.5rem' }}>
@@ -152,7 +156,8 @@ export default function Admin() {
       )}
 
       <div className="admin-layout">
-        <div className="admin-sidebar card">
+        <div className="admin-sidebar">
+          <div className="admin-sidebar-brand">FPL League Admin</div>
           {SECTIONS.map((s) => (
             <button
               key={s.key}
@@ -168,7 +173,7 @@ export default function Admin() {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gap: '1.25rem' }}>
+        <div className="admin-content">
           {section === 'sync' && (
             <div className="card fade-in">
               <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Sync Data</h2>

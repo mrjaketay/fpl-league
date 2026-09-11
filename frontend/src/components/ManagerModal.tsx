@@ -23,7 +23,7 @@ export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { mana
         managerName={manager.manager_name}
         teamName={manager.team_name}
         defaultGw={manager.last_gameweek ?? defaultGw}
-        onClose={() => setViewingTeam(false)}
+        onClose={onClose}
       />
     );
   }

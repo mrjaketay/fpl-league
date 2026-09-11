@@ -25,19 +25,21 @@ export default function Home() {
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
-    api.latestGameweek().then((d) => setLatestGw(d.latest)).catch(() => {});
-    api.hallOfFame().then(setHof).catch(() => {});
-    api.standings().then(setStandings).catch(() => {});
-    api.longevity().then(setLongevity).catch(() => {});
+    // One request instead of six separate ones — cuts homepage load time
+    // down since each round trip to my free-tier backend adds real
+    // latency. Price changes stay separate since that data comes from
+    // FPL directly (cached in memory already) rather than my database.
+    api.homeBundle().then((d) => {
+      setLatestGw(d.latest_gameweek);
+      setStandings(d.standings);
+      setHof(d.hall_of_fame);
+      setLongevity(d.longevity);
+      setAwards(d.awards);
+      setFlyers(d.flyers);
+      setQuickStats(d.quick_stats);
+    }).catch(() => {});
     api.priceChanges().then(setPrices).catch(() => {});
-    api.quickStats().then(setQuickStats).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (!latestGw) return;
-    api.gameweekAwards(latestGw).then(setAwards).catch(() => {});
-    api.flyers(latestGw).then(setFlyers).catch(() => {});
-  }, [latestGw]);
 
   function openManager(entryId: number) {
     const standingsRow = standings.find((s) => s.entry_id === entryId);

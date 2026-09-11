@@ -15,12 +15,27 @@ const CHIP_MAP = {
 };
 
 async function upsertManagers(standingsResults) {
+  const currentEntryIds = standingsResults.map((r) => r.entry);
+
   for (const r of standingsResults) {
     await query(
-      `INSERT INTO managers (entry_id, manager_name, team_name)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (entry_id) DO UPDATE SET manager_name = $2, team_name = $3`,
+      `INSERT INTO managers (entry_id, manager_name, team_name, active)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (entry_id) DO UPDATE SET manager_name = $2, team_name = $3, active = true`,
       [r.entry, r.player_name, r.entry_name]
+    );
+  }
+
+  // Anyone we've seen before who's no longer in the league's standings
+  // (removed, left, or suspended) gets flagged inactive automatically —
+  // this is what keeps my manager count and current-season standings
+  // accurate without me needing to manually track who's still in.
+  // Their history stays in the database untouched either way.
+  if (currentEntryIds.length > 0) {
+    await query(
+      `UPDATE managers SET active = false
+       WHERE active = true AND entry_id != ALL($1::int[])`,
+      [currentEntryIds]
     );
   }
 }

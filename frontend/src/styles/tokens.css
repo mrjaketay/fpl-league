@@ -222,15 +222,31 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .dashboard-grid .span-2 { grid-column: span 2; }
 @media (max-width: 900px) { .dashboard-grid .span-2 { grid-column: span 1; } }
 
-/* Admin sidebar layout */
-.admin-layout {
+/* Admin — full-page dashboard layout (no site header/maxWidth wrapper on
+   this route, see App.tsx). Sidebar is fixed to the full viewport height
+   on the left; content area is offset to sit beside it. */
+.admin-page {
+  padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem) 3rem;
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 1.5rem;
-  align-items: start;
+  gap: 1.25rem;
+  margin-left: 240px;
 }
-@media (max-width: 760px) { .admin-layout { grid-template-columns: 1fr; } }
-.admin-sidebar { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.75rem; position: sticky; top: 1rem; }
+.admin-layout { display: contents; }
+.admin-sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 240px;
+  background: linear-gradient(180deg, #2a0030 0%, var(--purple-deep) 100%);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 0.3rem;
+  padding: 1.5rem 0.9rem;
+  overflow-y: auto;
+  z-index: 20;
+}
+.admin-sidebar-brand {
+  font-family: var(--font-display); font-weight: 800; font-size: 0.95rem;
+  color: var(--white); padding: 0 0.75rem 1rem;
+}
 .admin-sidebar-item {
   display: flex; align-items: center; gap: 0.6rem;
   background: transparent; border: none; border-left: 3px solid transparent;
@@ -241,6 +257,15 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .admin-sidebar-item:hover { background: rgba(255,255,255,0.05); color: var(--white); }
 .admin-sidebar-item--active { background: rgba(0,255,133,0.1); color: var(--green); border-left-color: var(--green); }
 .admin-sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
+.admin-content { display: grid; gap: 1.25rem; max-width: 900px; }
+
+@media (max-width: 760px) {
+  .admin-page { margin-left: 0; }
+  .admin-sidebar { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; height: auto; }
+  .admin-sidebar-brand { display: none; }
+  .admin-sidebar-divider { display: none; }
+  .admin-content { max-width: 100%; }
+}
 
 /* Motion */
 @keyframes fadeInUp {
@@ -328,6 +353,8 @@ tr { transition: background 0.15s ease; }
   background: linear-gradient(160deg, #2a0030 0%, var(--purple-deep) 100%);
   border: 1px solid rgba(246,246,250,0.14);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  max-height: 88vh;
+  overflow-y: auto;
 }
 .modal-card--wide { max-width: 520px; }
 
@@ -356,11 +383,12 @@ tr { transition: background 0.15s ease; }
   border-radius: var(--radius) var(--radius) 0 0;
   border: 1px solid rgba(255,255,255,0.15);
   border-bottom: none;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 3.4;
+  max-height: 46vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 1.6rem 0.5rem;
+  padding: 1rem 0.5rem;
 }
 .pitch-row { display: flex; justify-content: center; gap: 0.7rem; flex-wrap: wrap; position: relative; z-index: 1; }
 

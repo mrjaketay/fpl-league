@@ -21,7 +21,7 @@ leagueRouter.get('/standings', asyncHandler(async (req, res) => {
             gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points
      FROM gameweek_stats gs
      JOIN managers m ON m.entry_id = gs.entry_id
-     WHERE gs.gameweek = $1`,
+     WHERE gs.gameweek = $1 AND m.active = true`,
     [gw]
   );
   rows.sort((a, b) => b.total_points_after - a.total_points_after);
@@ -127,26 +127,139 @@ leagueRouter.get('/awards/monthly/:month', asyncHandler(async (req, res) => {
 // Quick-stats strip for the homepage: active managers, current gameweek,
 // season leader, and "Chief Donkey" (most Donkey of the Week wins).
 leagueRouter.get('/quick-stats', asyncHandler(async (_req, res) => {
-  const { rows: countRows } = await query('SELECT COUNT(*) FROM managers WHERE active = true');
-  const { rows: gwRows } = await query('SELECT MAX(gameweek) AS latest FROM gameweek_stats');
-  const { rows: leaderRows } = await query(`
-    SELECT m.manager_name, m.team_name, gs.total_points_after
-    FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
-    WHERE gs.gameweek = (SELECT MAX(gameweek) FROM gameweek_stats)
-    ORDER BY gs.total_points_after DESC LIMIT 1
-  `);
-  const { rows: donkeyRows } = await query(`
-    SELECT m.manager_name, m.team_name, COUNT(*) AS wins
-    FROM awards a JOIN managers m ON m.entry_id = a.entry_id
-    WHERE a.award_type = 'donkey_of_week'
-    GROUP BY m.manager_name, m.team_name
-    ORDER BY wins DESC LIMIT 1
-  `);
+  // Ran these one after another before — switched to Promise.all so all
+  // four queries fire at once instead of waiting on each other in turn.
+  // Small win per request, but it adds up since I call this on every
+  // homepage and admin-dashboard load.
+  const [countRows, gwRows, leaderRows, donkeyRows] = await Promise.all([
+    query('SELECT COUNT(*) FROM managers WHERE active = true'),
+    query('SELECT MAX(gameweek) AS latest FROM gameweek_stats'),
+    query(`
+      SELECT m.manager_name, m.team_name, gs.total_points_after
+      FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+      WHERE gs.gameweek = (SELECT MAX(gameweek) FROM gameweek_stats) AND m.active = true
+      ORDER BY gs.total_points_after DESC LIMIT 1
+    `),
+    query(`
+      SELECT m.manager_name, m.team_name, COUNT(*) AS wins
+      FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+      WHERE a.award_type = 'donkey_of_week'
+      GROUP BY m.manager_name, m.team_name
+      ORDER BY wins DESC LIMIT 1
+    `),
+  ]);
   res.json({
-    active_managers: Number(countRows[0].count),
-    current_gameweek: gwRows[0]?.latest ?? null,
-    season_leader: leaderRows[0] ?? null,
-    chief_donkey: donkeyRows[0] ?? null,
+    active_managers: Number(countRows.rows[0].count),
+    current_gameweek: gwRows.rows[0]?.latest ?? null,
+    season_leader: leaderRows.rows[0] ?? null,
+    chief_donkey: donkeyRows.rows[0] ?? null,
+  });
+}));
+
+// Everything my homepage needs, bundled into one request instead of the
+// seven or eight separate round trips it used to make. Each one adds
+// real latency over the network, especially to a free-tier backend —
+// bundling them into a single Promise.all cuts the homepage's load time
+// down to roughly one request's worth of round-trip time.
+leagueRouter.get('/home-bundle', asyncHandler(async (_req, res) => {
+  const { rows: gwRows } = await query('SELECT MAX(gameweek) AS latest FROM gameweek_stats');
+  const latestGw = gwRows[0]?.latest ?? null;
+
+  const [
+    standingsRows,
+    hofRows,
+    longevityRows,
+    quickStatsCount,
+    quickStatsLeader,
+    quickStatsDonkey,
+    awardsRows,
+    flyerRows,
+  ] = await Promise.all([
+    query(
+      `SELECT m.entry_id, m.manager_name, m.team_name,
+              gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points
+       FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+       WHERE gs.gameweek = $1 AND m.active = true`,
+      [latestGw]
+    ),
+    query(
+      `SELECT a.*, m.manager_name, m.team_name FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+       WHERE award_type = 'hall_of_fame' ORDER BY gameweek DESC`
+    ),
+    query(`
+      WITH ranked AS (
+        SELECT entry_id, gameweek, total_points_after,
+          RANK() OVER (PARTITION BY gameweek ORDER BY total_points_after DESC) AS league_rank,
+          COUNT(*) OVER (PARTITION BY gameweek) AS total_managers
+        FROM gameweek_stats
+      ),
+      position_counts AS (
+        SELECT entry_id,
+          COUNT(*) FILTER (WHERE league_rank = 1) AS weeks_in_1st,
+          COUNT(*) FILTER (WHERE league_rank <= 3) AS weeks_in_top3,
+          COUNT(*) FILTER (WHERE league_rank = total_managers) AS weeks_in_last,
+          COUNT(*) FILTER (WHERE league_rank > total_managers - 3) AS weeks_in_bottom3
+        FROM ranked GROUP BY entry_id
+      ),
+      award_counts AS (
+        SELECT entry_id,
+          COUNT(*) FILTER (WHERE award_type = 'manager_of_week') AS motw_wins,
+          COUNT(*) FILTER (WHERE award_type = 'donkey_of_week') AS dotw_wins
+        FROM awards WHERE gameweek IS NOT NULL GROUP BY entry_id
+      )
+      SELECT m.entry_id, m.manager_name, m.team_name,
+        COALESCE(p.weeks_in_1st, 0) AS weeks_in_1st, COALESCE(p.weeks_in_top3, 0) AS weeks_in_top3,
+        COALESCE(p.weeks_in_last, 0) AS weeks_in_last, COALESCE(p.weeks_in_bottom3, 0) AS weeks_in_bottom3,
+        COALESCE(a.motw_wins, 0) AS motw_wins, COALESCE(a.dotw_wins, 0) AS dotw_wins
+      FROM managers m
+      LEFT JOIN position_counts p ON p.entry_id = m.entry_id
+      LEFT JOIN award_counts a ON a.entry_id = m.entry_id
+    `),
+    query('SELECT COUNT(*) FROM managers WHERE active = true'),
+    latestGw
+      ? query(
+          `SELECT m.manager_name, m.team_name, gs.total_points_after
+           FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+           WHERE gs.gameweek = $1 AND m.active = true ORDER BY gs.total_points_after DESC LIMIT 1`,
+          [latestGw]
+        )
+      : Promise.resolve({ rows: [] }),
+    query(`
+      SELECT m.manager_name, m.team_name, COUNT(*) AS wins
+      FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+      WHERE a.award_type = 'donkey_of_week'
+      GROUP BY m.manager_name, m.team_name ORDER BY wins DESC LIMIT 1
+    `),
+    latestGw
+      ? query(
+          `SELECT a.*, m.manager_name, m.team_name FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+           WHERE gameweek = $1 ORDER BY award_type`,
+          [latestGw]
+        )
+      : Promise.resolve({ rows: [] }),
+    latestGw
+      ? query('SELECT award_type, image_data FROM award_flyers WHERE gameweek = $1', [latestGw])
+      : Promise.resolve({ rows: [] }),
+  ]);
+
+  const flyers = {};
+  for (const r of flyerRows.rows) flyers[r.award_type] = r.image_data;
+
+  const standings = [...standingsRows.rows].sort((a, b) => b.total_points_after - a.total_points_after);
+
+  res.json({
+    latest_gameweek: latestGw,
+    standings,
+    hall_of_fame: hofRows.rows,
+    longevity: longevityRows.rows,
+    awards: awardsRows.rows,
+    flyers,
+    quick_stats: {
+      active_managers: Number(quickStatsCount.rows[0].count),
+      current_gameweek: latestGw,
+      season_leader: quickStatsLeader.rows[0] ?? null,
+      chief_donkey: quickStatsDonkey.rows[0] ?? null,
+    },
   });
 }));
 
@@ -326,7 +439,7 @@ leagueRouter.get('/stats/longevity', asyncHandler(async (_req, res) => {
 
 // Today's price risers/fallers, top 5 each — same underlying data FPL's
 // own price-changes page uses (cost_change_event on every player in
-// bootstrap-static). Not scoped to your league specifically, since price
+// bootstrap-static). Not scoped to my league specifically, since price
 // changes are game-wide, same as the real FPL page.
 leagueRouter.get('/stats/price-changes', asyncHandler(async (_req, res) => {
   const bootstrap = await fetchBootstrap();
