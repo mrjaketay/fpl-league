@@ -93,23 +93,17 @@ export default function Awards() {
       {restTypes.length > 0 && (
         <div className="card fade-in fade-in-3">
           <div className="section-heading">OTHER AWARDS THIS WEEK</div>
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
+          <div className="awards-grid">
             {restTypes.map((type, i) => {
               const winners = awards.filter((a) => a.award_type === type);
               const meta = LABELS[type] ?? { label: type, tone: 'outline' as const, emoji: '🎖️' };
               return (
-                <div key={type} className="row-in" style={{ animationDelay: `${i * 0.05}s`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '0.6rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{meta.emoji}</span>
-                    <div>
-                      <span className={`pill pill--${meta.tone}`}>{winners.length > 1 ? `Joint ${meta.label}` : meta.label}</span>
-                      <div style={{ marginTop: '0.3rem' }}>
-                        {winners.map((w) => w.team_name).join(' & ')}
-                        <span style={{ color: 'var(--grey)' }}> ({winners.map((w) => w.manager_name).join(' & ')})</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mono" style={{ fontSize: '1.1rem' }}>{winners[0].value}</div>
+                <div key={type} className="row-in award-tile" style={{ animationDelay: `${i * 0.05}s` }}>
+                  <span style={{ fontSize: '1.4rem' }}>{meta.emoji}</span>
+                  <span className={`pill pill--${meta.tone}`} style={{ marginTop: '0.5rem' }}>{winners.length > 1 ? `Joint ${meta.label}` : meta.label}</span>
+                  <div style={{ marginTop: '0.5rem', fontWeight: 600 }}>{winners.map((w) => w.team_name).join(' & ')}</div>
+                  <div style={{ color: 'var(--grey)', fontSize: '0.78rem' }}>{winners.map((w) => w.manager_name).join(' & ')}</div>
+                  <div className="mono" style={{ fontSize: '1.15rem', marginTop: '0.4rem', color: 'var(--white)' }}>{winners[0].value}</div>
                 </div>
               );
             })}

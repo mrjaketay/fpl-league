@@ -43,7 +43,9 @@ export default function Admin() {
   const [hofThreshold, setHofThreshold] = useState('100');
   const [quarters, setQuarters] = useState<QuarterRange[]>([[1, 9], [10, 19], [20, 29], [30, 38]]);
   const [months, setMonths] = useState<MonthRange[]>([]);
-  const [section, setSection] = useState<'sync' | 'fixtures' | 'awards' | 'settings' | 'flyers' | 'backup'>('sync');
+  const [section, setSection] = useState<'sync' | 'fixtures' | 'awards' | 'settings' | 'flyers' | 'backup' | 'teams'>('sync');
+  const [managers, setManagers] = useState<any[]>([]);
+  const [suspendGw, setSuspendGw] = useState<Record<number, number>>({});
   const [flyerGw, setFlyerGw] = useState(1);
   const [flyerPreviews, setFlyerPreviews] = useState<Record<string, string>>({});
   const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
@@ -120,9 +122,15 @@ export default function Admin() {
     setQuarters((qs) => qs.map((q, i) => (i === index ? ([side === 0 ? value : q[0], side === 1 ? value : q[1]] as QuarterRange) : q)));
   }
 
+  useEffect(() => {
+    if (!isLoggedIn() || section !== 'teams') return;
+    api.getManagers().then(setManagers).catch(() => {});
+  }, [section]);
+
   const SECTIONS: { key: typeof section; label: string; icon: string }[] = [
     { key: 'sync', label: 'Sync Data', icon: '🔄' },
     { key: 'fixtures', label: 'H2H Fixtures', icon: '⚔️' },
+    { key: 'teams', label: 'Manage Teams', icon: '👥' },
     { key: 'awards', label: 'Awards', icon: '🏆' },
     { key: 'settings', label: 'League Settings', icon: '⚙️' },
     { key: 'flyers', label: 'Award Flyers', icon: '🖼️' },
@@ -204,6 +212,51 @@ export default function Admin() {
                 <span className="field-label">To</span>
                 <GameweekSelect value={totalGw} onChange={setTotalGw} />
                 <button className="btn btn--primary" onClick={() => run('Generate H2H fixtures', () => api.generateH2H(startGw, totalGw))}>Generate</button>
+              </div>
+            </div>
+          )}
+
+          {section === 'teams' && (
+            <div className="card fade-in">
+              <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Manage Teams</h2>
+              <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                Suspending a team here is a house-rule decision on my side — FPL's own data has no concept of
+                it. Set "Suspended from GW" and that team disappears from standings and leaderboards from that
+                gameweek onward, but stays fully visible for every gameweek before it. Clear the field and save
+                to reinstate them.
+              </p>
+              <div style={{ display: 'grid', gap: '0.6rem' }}>
+                {managers.map((m) => (
+                  <div key={m.entry_id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', borderBottom: '1px solid var(--line)', paddingBottom: '0.6rem' }}>
+                    <span style={{ flex: 1, minWidth: 160 }}>
+                      {m.team_name}
+                      {m.suspended_from_gameweek && (
+                        <span className="pill pill--pink" style={{ marginLeft: '0.5rem' }}>Suspended from GW{m.suspended_from_gameweek}</span>
+                      )}
+                    </span>
+                    <span className="field-label">Suspended from GW</span>
+                    <input
+                      type="number"
+                      min={1} max={38}
+                      placeholder="none"
+                      value={suspendGw[m.entry_id] ?? m.suspended_from_gameweek ?? ''}
+                      onChange={(e) => setSuspendGw((s) => ({ ...s, [m.entry_id]: Number(e.target.value) }))}
+                      style={{ width: 70 }}
+                    />
+                    <button
+                      className="btn btn--ghost"
+                      onClick={() => run(`Update suspension for ${m.team_name}`, async () => {
+                        const value = suspendGw[m.entry_id];
+                        const result = await api.suspendManager(m.entry_id, value || null);
+                        setManagers((ms) => ms.map((mm) => mm.entry_id === m.entry_id ? { ...mm, suspended_from_gameweek: value || null } : mm));
+                        return result;
+                      })}
+                    >
+                      Save
+                    </button>
+                  </div>
+                ))}
+                {managers.length === 0 && <span style={{ color: 'var(--grey)' }}>No managers synced yet.</span>}
               </div>
             </div>
           )}

@@ -98,6 +98,14 @@ ALTER TABLE awards ADD COLUMN IF NOT EXISTS month INTEGER;
 -- previously both looked identical, which made an honest league table
 -- impossible.
 ALTER TABLE h2h_fixtures ADD COLUMN IF NOT EXISTS settled_at TIMESTAMPTZ;
+
+-- Manual suspension, for house-rule decisions FPL's own data has no way
+-- to reflect (e.g. two managers suspended from the league by me, not by
+-- FPL). NULL = never suspended. Once set to a gameweek number, that
+-- manager disappears from standings/leaderboards from that gameweek
+-- onward, but stays visible for every gameweek before it — so history
+-- up to their suspension is preserved exactly as it happened.
+ALTER TABLE managers ADD COLUMN IF NOT EXISTS suspended_from_gameweek INTEGER;
 CREATE INDEX IF NOT EXISTS idx_awards_type_gw ON awards(award_type, gameweek);
 CREATE INDEX IF NOT EXISTS idx_h2h_gw ON h2h_fixtures(gameweek);
 

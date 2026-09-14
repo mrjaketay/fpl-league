@@ -124,3 +124,18 @@ adminRouter.get('/export', asyncHandler(async (_req, res) => {
     settings: settings.rows,
   });
 }));
+
+// Every manager I've ever seen (active or not), for the Manage Teams
+// screen — lets me manually suspend someone from a given gameweek
+// onward, for house-rule reasons FPL's own data has no way to know
+// about.
+adminRouter.get('/managers', asyncHandler(async (_req, res) => {
+  const { rows } = await query('SELECT entry_id, manager_name, team_name, active, suspended_from_gameweek FROM managers ORDER BY team_name');
+  res.json(rows);
+}));
+
+adminRouter.put('/managers/:entryId/suspend', asyncHandler(async (req, res) => {
+  const { fromGameweek } = req.body; // null/undefined clears the suspension
+  await query('UPDATE managers SET suspended_from_gameweek = $1 WHERE entry_id = $2', [fromGameweek ?? null, req.params.entryId]);
+  res.json({ ok: true });
+}));

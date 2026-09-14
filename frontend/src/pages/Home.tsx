@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import ManagerModal from '../components/ManagerModal';
 import AwardPoster from '../components/AwardPoster';
 import AwardIcon from '../components/AwardIcon';
+import GraffitiHOF from '../components/GraffitiHOF';
 
 const WEEKLY_AWARD_META: Record<string, { title: string; icon: 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack'; tone: 'green' | 'pink' | 'cyan' }> = {
   manager_of_week: { title: 'Manager of the Week', icon: 'motw', tone: 'green' },
@@ -142,7 +143,10 @@ export default function Home() {
             )}
 
             <div className="card fade-in fade-in-3">
-              <div className="section-heading">HALL OF FAME</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                <GraffitiHOF size={40} />
+                <span className="section-heading" style={{ marginBottom: 0 }}>HALL OF FAME</span>
+              </div>
               {hof.length === 0 ? (
                 <p style={{ color: 'var(--grey)' }}>No one's hit 100+ points without a chip yet — it'll show up here the moment they do.</p>
               ) : (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 
@@ -6,6 +6,8 @@ export default function H2H() {
   const [gw, setGw] = useState(1);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [table, setTable] = useState<any[]>([]);
+  const [downloading, setDownloading] = useState(false);
+  const fixturesCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.h2hGameweek(gw).then(setFixtures).catch(() => setFixtures([]));
@@ -15,12 +17,40 @@ export default function H2H() {
     api.h2hTable().then(setTable).catch(() => {});
   }, []);
 
+  // Screenshots the fixtures card and downloads it as a PNG — good for
+  // sharing the week's fixtures to a WhatsApp group as a ready-made flyer,
+  // no extra design tool needed.
+  async function downloadFixturesFlyer() {
+    if (!fixturesCardRef.current) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(fixturesCardRef.current, {
+        backgroundColor: '#1c0021',
+        scale: 2,
+      });
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `h2h-fixtures-gw${gw}.png`;
+      a.click();
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
-      <div className="card fade-in">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <span className="field-label">Gameweek</span>
-          <GameweekSelect value={gw} onChange={setGw} />
+      <div className="card fade-in" ref={fixturesCardRef}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span className="field-label">Gameweek</span>
+            <GameweekSelect value={gw} onChange={setGw} />
+          </div>
+          {fixtures.length > 0 && (
+            <button className="btn btn--ghost" disabled={downloading} onClick={downloadFixturesFlyer}>
+              {downloading ? 'Preparing…' : '⬇ Download as image'}
+            </button>
+          )}
         </div>
         {fixtures.length === 0 && (
           <p style={{ color: 'var(--grey)' }}>No fixtures yet — generate them once from Admin.</p>

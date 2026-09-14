@@ -41,6 +41,7 @@ export const api = {
   team: (entryId: number, gw: number) => request(`/api/league/team/${entryId}/${gw}`),
   flyers: (gw: number) => request(`/api/league/flyers/${gw}`),
   monthlyAward: (month: number) => request(`/api/league/awards/monthly/${month}`),
+  quarterlyLeaderboard: (quarter: number) => request(`/api/league/stats/quarterly-leaderboard/${quarter}`),
   quickStats: () => request('/api/league/quick-stats'),
 
   login: (email: string, password: string) =>
@@ -64,6 +65,9 @@ export const api = {
     request(`/api/admin/flyers/${gameweek}/${award_type}`, { method: 'DELETE' }),
   recomputeMonthly: (month: number) => request(`/api/admin/awards/monthly/${month}`, { method: 'POST' }),
   exportData: () => request('/api/admin/export'),
+  getManagers: () => request('/api/admin/managers'),
+  suspendManager: (entryId: number, fromGameweek: number | null) =>
+    request(`/api/admin/managers/${entryId}/suspend`, { method: 'PUT', body: JSON.stringify({ fromGameweek }) }),
 };
 
 export function setToken(token: string) {

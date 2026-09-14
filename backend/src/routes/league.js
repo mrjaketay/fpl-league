@@ -21,7 +21,7 @@ leagueRouter.get('/standings', asyncHandler(async (req, res) => {
             gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points
      FROM gameweek_stats gs
      JOIN managers m ON m.entry_id = gs.entry_id
-     WHERE gs.gameweek = $1 AND m.active = true`,
+     WHERE gs.gameweek = $1 AND (m.suspended_from_gameweek IS NULL OR $1 < m.suspended_from_gameweek)`,
     [gw]
   );
   rows.sort((a, b) => b.total_points_after - a.total_points_after);
@@ -113,6 +113,38 @@ leagueRouter.get('/awards/quarterly/:quarter', asyncHandler(async (req, res) => 
   res.json(rows);
 }));
 
+// Live running leaderboard for a quarter — unlike the endpoint above
+// (which only shows the LOCKED-IN winner once an admin finalizes it),
+// this sums up everyone's defense/midfield/attack points across the
+// quarter's gameweeks so far, so managers can see where they currently
+// stand before the quarter's actually over.
+leagueRouter.get('/stats/quarterly-leaderboard/:quarter', asyncHandler(async (req, res) => {
+  const { rows: settingsRows } = await query("SELECT value FROM league_settings WHERE key = 'quarter_boundaries'");
+  const boundaries = settingsRows[0]?.value;
+  if (!boundaries || !boundaries[req.params.quarter - 1]) return res.json({ from: null, to: null, defense: [], midfield: [], attack: [] });
+  const [from, to] = boundaries[req.params.quarter - 1];
+
+  const { rows } = await query(
+    `SELECT m.entry_id, m.manager_name, m.team_name,
+            SUM(gs.gk_def_points) AS defense_total,
+            SUM(gs.mid_points) AS midfield_total,
+            SUM(gs.fwd_points) AS attack_total
+     FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+     WHERE gs.gameweek BETWEEN $1 AND $2
+       AND (m.suspended_from_gameweek IS NULL OR $2 < m.suspended_from_gameweek)
+     GROUP BY m.entry_id, m.manager_name, m.team_name`,
+    [from, to]
+  );
+
+  const sortBy = (key) => [...rows].map((r) => ({ ...r, total: Number(r[key]) })).sort((a, b) => b.total - a.total);
+  res.json({
+    from, to,
+    defense: sortBy('defense_total'),
+    midfield: sortBy('midfield_total'),
+    attack: sortBy('attack_total'),
+  });
+}));
+
 // Manager of the Month for one month index (1-based, matches month_mapping order).
 leagueRouter.get('/awards/monthly/:month', asyncHandler(async (req, res) => {
   const { rows } = await query(
@@ -132,12 +164,13 @@ leagueRouter.get('/quick-stats', asyncHandler(async (_req, res) => {
   // Small win per request, but it adds up since I call this on every
   // homepage and admin-dashboard load.
   const [countRows, gwRows, leaderRows, donkeyRows] = await Promise.all([
-    query('SELECT COUNT(*) FROM managers WHERE active = true'),
+    query('SELECT COUNT(*) FROM managers WHERE active = true AND (suspended_from_gameweek IS NULL OR suspended_from_gameweek > (SELECT COALESCE(MAX(gameweek), 0) FROM gameweek_stats))'),
     query('SELECT MAX(gameweek) AS latest FROM gameweek_stats'),
     query(`
       SELECT m.manager_name, m.team_name, gs.total_points_after
       FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
-      WHERE gs.gameweek = (SELECT MAX(gameweek) FROM gameweek_stats) AND m.active = true
+      WHERE gs.gameweek = (SELECT MAX(gameweek) FROM gameweek_stats)
+        AND (m.suspended_from_gameweek IS NULL OR (SELECT MAX(gameweek) FROM gameweek_stats) < m.suspended_from_gameweek)
       ORDER BY gs.total_points_after DESC LIMIT 1
     `),
     query(`
@@ -179,7 +212,7 @@ leagueRouter.get('/home-bundle', asyncHandler(async (_req, res) => {
       `SELECT m.entry_id, m.manager_name, m.team_name,
               gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points
        FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
-       WHERE gs.gameweek = $1 AND m.active = true`,
+       WHERE gs.gameweek = $1 AND (m.suspended_from_gameweek IS NULL OR $1 < m.suspended_from_gameweek)`,
       [latestGw]
     ),
     query(
@@ -215,12 +248,13 @@ leagueRouter.get('/home-bundle', asyncHandler(async (_req, res) => {
       LEFT JOIN position_counts p ON p.entry_id = m.entry_id
       LEFT JOIN award_counts a ON a.entry_id = m.entry_id
     `),
-    query('SELECT COUNT(*) FROM managers WHERE active = true'),
+    query('SELECT COUNT(*) FROM managers WHERE active = true AND (suspended_from_gameweek IS NULL OR suspended_from_gameweek > (SELECT COALESCE(MAX(gameweek), 0) FROM gameweek_stats))'),
     latestGw
       ? query(
           `SELECT m.manager_name, m.team_name, gs.total_points_after
            FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
-           WHERE gs.gameweek = $1 AND m.active = true ORDER BY gs.total_points_after DESC LIMIT 1`,
+           WHERE gs.gameweek = $1 AND (m.suspended_from_gameweek IS NULL OR $1 < m.suspended_from_gameweek)
+           ORDER BY gs.total_points_after DESC LIMIT 1`,
           [latestGw]
         )
       : Promise.resolve({ rows: [] }),
@@ -324,7 +358,7 @@ leagueRouter.get('/h2h/table', asyncHandler(async (_req, res) => {
 // League name + basic info, for display in the header.
 leagueRouter.get('/info', asyncHandler(async (_req, res) => {
   const { rows } = await query("SELECT value FROM league_settings WHERE key = 'league_name'");
-  const { rows: managerCount } = await query('SELECT COUNT(*) FROM managers WHERE active = true');
+  const { rows: managerCount } = await query('SELECT COUNT(*) FROM managers WHERE active = true AND (suspended_from_gameweek IS NULL OR suspended_from_gameweek > (SELECT COALESCE(MAX(gameweek), 0) FROM gameweek_stats))');
   res.json({
     name: rows[0]?.value ?? 'My Mini League',
     managerCount: Number(managerCount[0].count),

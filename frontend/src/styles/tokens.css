@@ -259,6 +259,21 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .admin-sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
 .admin-content { display: grid; gap: 1.25rem; max-width: 900px; }
 
+/* Awards grid — compact tile cards instead of a long list of rows,
+   used for "Other Awards This Week". */
+.awards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+.award-tile {
+  display: flex; flex-direction: column;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+
 @media (max-width: 760px) {
   .admin-page { margin-left: 0; }
   .admin-sidebar { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; height: auto; }

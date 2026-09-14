@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 
-const CHIP_LABELS: Record<string, string> = {
-  wildcard: 'Wildcard',
-  free_hit: 'Free Hit',
-  bench_boost: 'Bench Boost',
-  triple_captain: 'Triple Captain',
+const CHIP_META: Record<string, { label: string; emoji: string }> = {
+  wildcard: { label: 'Wildcard', emoji: '🃏' },
+  free_hit: { label: 'Free Hit', emoji: '🎯' },
+  bench_boost: { label: 'Bench Boost', emoji: '🚀' },
+  triple_captain: { label: 'Triple Captain', emoji: '👑' },
 };
 
 const LEADERBOARDS: { key: string; label: string; emoji: string }[] = [
@@ -18,12 +18,20 @@ const LEADERBOARDS: { key: string; label: string; emoji: string }[] = [
   { key: 'dotw_wins', label: 'Most Donkey of the Week Wins', emoji: '🐴' },
 ];
 
+const QUARTER_CATS: { key: 'defense' | 'midfield' | 'attack'; label: string; emoji: string }[] = [
+  { key: 'defense', label: 'Best Defense', emoji: '🧱' },
+  { key: 'midfield', label: 'Best Midfield', emoji: '🎯' },
+  { key: 'attack', label: 'Best Attack', emoji: '⚡' },
+];
+
 export default function LeagueStats() {
   const [gw, setGw] = useState(1);
   const [captains, setCaptains] = useState<any[]>([]);
   const [chips, setChips] = useState<any[]>([]);
   const [longevity, setLongevity] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [quarter, setQuarter] = useState(1);
+  const [quarterBoard, setQuarterBoard] = useState<any>({ defense: [], midfield: [], attack: [] });
 
   useEffect(() => {
     setError(null);
@@ -35,7 +43,15 @@ export default function LeagueStats() {
     api.longevity().then(setLongevity).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    api.quarterlyLeaderboard(quarter).then(setQuarterBoard).catch(() => {});
+  }, [quarter]);
+
   const totalCaptains = captains.reduce((sum, c) => sum + c.count, 0);
+  const chipsByType = Object.keys(CHIP_META).map((type) => ({
+    type,
+    entries: chips.filter((c) => c.chip_played === type).sort((a, b) => a.gameweek - b.gameweek),
+  }));
 
   return (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -45,7 +61,7 @@ export default function LeagueStats() {
       </div>
 
       <div className="card fade-in fade-in-1">
-        <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>MOST CAPTAINED — GW{gw}</h3>
+        <div className="section-heading">MOST CAPTAINED — GW{gw}</div>
         {error && <p className="pill pill--pink">{error}</p>}
         {captains.length === 0 && !error && <p style={{ color: 'var(--grey)' }}>No captaincy data for this gameweek yet.</p>}
         <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -70,7 +86,40 @@ export default function LeagueStats() {
       </div>
 
       <div className="card fade-in fade-in-2">
-        <h3 style={{ fontSize: '1rem', marginBottom: '0.4rem', color: 'var(--grey)' }}>LEAGUE LEADERBOARDS</h3>
+        <div className="section-heading">QUARTERLY LEADERBOARD</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+          <span className="field-label">Quarter</span>
+          <select className="gw-select" value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
+            {[1, 2, 3, 4].map((q) => <option key={q} value={q}>Q{q}</option>)}
+          </select>
+          {quarterBoard.from && <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>GW{quarterBoard.from}–{quarterBoard.to} · live running total, not yet locked in</span>}
+        </div>
+        <div className="three-col">
+          {QUARTER_CATS.map(({ key, label, emoji }) => {
+            const list = (quarterBoard[key] ?? []).slice(0, 5);
+            return (
+              <div key={key} className="stat-tile" style={{ alignItems: 'stretch' }}>
+                <span className="label">{emoji} {label}</span>
+                {list.length === 0 ? (
+                  <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No data yet</span>
+                ) : (
+                  <div style={{ display: 'grid', gap: '0.3rem', marginTop: '0.4rem' }}>
+                    {list.map((m: any, i: number) => (
+                      <div key={m.entry_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                        <span style={{ color: i === 0 ? 'var(--green)' : 'var(--white)', fontWeight: i === 0 ? 700 : 400 }}>{i + 1}. {m.team_name}</span>
+                        <span className="mono" style={{ color: 'var(--grey)' }}>{m.total}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="card fade-in fade-in-2">
+        <div className="section-heading">LEAGUE LEADERBOARDS</div>
         <p style={{ color: 'var(--grey)', fontSize: '0.8rem', marginBottom: '1rem' }}>
           "Weeks" here means total gameweeks spent in that spot across the season — not necessarily in a row.
         </p>
@@ -98,22 +147,32 @@ export default function LeagueStats() {
       </div>
 
       <div className="card fade-in fade-in-3">
-        <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--grey)' }}>CHIP USAGE — SEASON</h3>
+        <div className="section-heading">CHIP USAGE — SEASON</div>
         {chips.length === 0 ? (
           <p style={{ color: 'var(--grey)' }}>No chips played yet this season.</p>
         ) : (
-          <div className="table-scroll"><table>
-            <thead><tr><th>GW</th><th>Manager</th><th>Chip</th></tr></thead>
-            <tbody>
-              {chips.map((c, i) => (
-                <tr key={i}>
-                  <td className="num">{c.gameweek}</td>
-                  <td>{c.team_name} <span style={{ color: 'var(--grey)' }}>({c.manager_name})</span></td>
-                  <td><span className="pill pill--cyan">{CHIP_LABELS[c.chip_played] ?? c.chip_played}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
+          <div className="two-col-even">
+            {chipsByType.map(({ type, entries }) => {
+              const meta = CHIP_META[type];
+              return (
+                <div key={type} className="stat-tile" style={{ alignItems: 'stretch' }}>
+                  <span className="label">{meta.emoji} {meta.label}</span>
+                  {entries.length === 0 ? (
+                    <span style={{ color: 'var(--grey)', fontSize: '0.82rem', marginTop: '0.3rem' }}>Not played yet</span>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '0.3rem', marginTop: '0.4rem' }}>
+                      {entries.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                          <span>{c.team_name}</span>
+                          <span className="mono" style={{ color: 'var(--grey)' }}>GW{c.gameweek}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
