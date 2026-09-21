@@ -139,3 +139,30 @@ adminRouter.put('/managers/:entryId/suspend', asyncHandler(async (req, res) => {
   await query('UPDATE managers SET suspended_from_gameweek = $1 WHERE entry_id = $2', [fromGameweek ?? null, req.params.entryId]);
   res.json({ ok: true });
 }));
+
+// Every H2H fixture I've generated, grouped by gameweek — for the
+// Admin panel so I can see what's already there instead of guessing
+// whether I've run this before.
+adminRouter.get('/h2h/fixtures', asyncHandler(async (_req, res) => {
+  const { rows } = await query(
+    `SELECT f.gameweek, f.entry_id_1, f.entry_id_2, m1.team_name AS team_1_name, m2.team_name AS team_2_name
+     FROM h2h_fixtures f
+     JOIN managers m1 ON m1.entry_id = f.entry_id_1
+     JOIN managers m2 ON m2.entry_id = f.entry_id_2
+     ORDER BY f.gameweek, f.id`
+  );
+  res.json(rows);
+}));
+
+// Wipes and rebuilds the fixture list for a gameweek range — this is
+// the "I really mean it" version of generating fixtures. Unlike the
+// plain generate route (which just skips gameweeks that already have
+// fixtures via ON CONFLICT), this deletes everything in the range
+// first, so it picks up any roster changes (like a newly suspended
+// manager) instead of silently keeping the stale pairings.
+adminRouter.post('/h2h/regenerate', asyncHandler(async (req, res) => {
+  const { startGameweek, totalGameweeks } = req.body;
+  await query('DELETE FROM h2h_fixtures WHERE gameweek BETWEEN $1 AND $2', [startGameweek, totalGameweeks]);
+  const result = await generateSeasonFixtures(Number(startGameweek), Number(totalGameweeks));
+  res.json(result);
+}));

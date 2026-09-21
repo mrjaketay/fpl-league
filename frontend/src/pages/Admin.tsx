@@ -44,6 +44,8 @@ export default function Admin() {
   const [quarters, setQuarters] = useState<QuarterRange[]>([[1, 9], [10, 19], [20, 29], [30, 38]]);
   const [months, setMonths] = useState<MonthRange[]>([]);
   const [section, setSection] = useState<'sync' | 'fixtures' | 'awards' | 'settings' | 'flyers' | 'backup' | 'teams'>('sync');
+  const [existingFixtures, setExistingFixtures] = useState<any[]>([]);
+  const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
   const [managers, setManagers] = useState<any[]>([]);
   const [suspendGw, setSuspendGw] = useState<Record<number, number>>({});
   const [flyerGw, setFlyerGw] = useState(1);
@@ -127,6 +129,11 @@ export default function Admin() {
     api.getManagers().then(setManagers).catch(() => {});
   }, [section]);
 
+  useEffect(() => {
+    if (!isLoggedIn() || section !== 'fixtures') return;
+    api.getH2hFixtures().then(setExistingFixtures).catch(() => {});
+  }, [section]);
+
   const SECTIONS: { key: typeof section; label: string; icon: string }[] = [
     { key: 'sync', label: 'Sync Data', icon: '🔄' },
     { key: 'fixtures', label: 'H2H Fixtures', icon: '⚔️' },
@@ -200,19 +207,83 @@ export default function Admin() {
 
           {section === 'fixtures' && (
             <div className="card fade-in">
-              <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>Generate H2H Fixtures</h2>
-              <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                Builds the head-to-head schedule for the season — a round-robin repeating as many times as the
-                gameweek range allows. <strong>Run this once</strong> — running it again later would create
-                duplicate fixtures for weeks you've already generated.
-              </p>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span className="field-label">From</span>
-                <GameweekSelect value={startGw} onChange={setStartGw} />
-                <span className="field-label">To</span>
-                <GameweekSelect value={totalGw} onChange={setTotalGw} />
-                <button className="btn btn--primary" onClick={() => run('Generate H2H fixtures', () => api.generateH2H(startGw, totalGw))}>Generate</button>
-              </div>
+              <h2 style={{ fontSize: '1.05rem', marginBottom: '0.4rem' }}>H2H Fixtures</h2>
+
+              {existingFixtures.length === 0 ? (
+                <>
+                  <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    Builds the head-to-head schedule for the season — a round-robin repeating as many times as
+                    the gameweek range allows.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span className="field-label">From</span>
+                    <GameweekSelect value={startGw} onChange={setStartGw} />
+                    <span className="field-label">To</span>
+                    <GameweekSelect value={totalGw} onChange={setTotalGw} />
+                    <button className="btn btn--primary" onClick={() => run('Generate H2H fixtures', async () => {
+                      const result = await api.generateH2H(startGw, totalGw);
+                      api.getH2hFixtures().then(setExistingFixtures).catch(() => {});
+                      return result;
+                    })}>
+                      Generate
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    Fixtures are already generated for this season — {existingFixtures.length} matches across{' '}
+                    {new Set(existingFixtures.map((f) => f.gameweek)).size} gameweeks. Generating again is locked
+                    to avoid duplicates; use Regenerate below if something genuinely needs to change (like a
+                    suspended team needing to drop out of the schedule).
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+                    <button className="btn btn--ghost" disabled title="Already generated — use Regenerate instead">Generate (locked)</button>
+                    <span className="field-label">From</span>
+                    <GameweekSelect value={startGw} onChange={setStartGw} />
+                    <span className="field-label">To</span>
+                    <GameweekSelect value={totalGw} onChange={setTotalGw} />
+                    {!confirmingRegenerate ? (
+                      <button className="btn btn--ghost" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => setConfirmingRegenerate(true)}>
+                        ⚠ Regenerate
+                      </button>
+                    ) : (
+                      <div className="card" style={{ border: '1px solid var(--pink)', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <span style={{ color: 'var(--pink)', fontWeight: 600, fontSize: '0.85rem' }}>
+                          This deletes every fixture from GW{startGw}–{totalGw} and rebuilds from scratch. Sure?
+                        </span>
+                        <button className="btn btn--primary" style={{ background: 'var(--pink)' }} onClick={async () => {
+                          setConfirmingRegenerate(false);
+                          await run('Regenerate H2H fixtures', async () => {
+                            const result = await api.regenerateH2h(startGw, totalGw);
+                            api.getH2hFixtures().then(setExistingFixtures).catch(() => {});
+                            return result;
+                          });
+                        }}>
+                          Yes, wipe and regenerate
+                        </button>
+                        <button className="btn btn--ghost" onClick={() => setConfirmingRegenerate(false)}>Cancel</button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="field-label" style={{ marginBottom: '0.5rem' }}>Generated Fixtures</div>
+                  <div style={{ display: 'grid', gap: '0.5rem', maxHeight: 320, overflowY: 'auto' }}>
+                    {Array.from(new Set(existingFixtures.map((f) => f.gameweek))).map((gwNum) => (
+                      <div key={gwNum}>
+                        <span className="mono" style={{ color: 'var(--grey)', fontSize: '0.78rem' }}>GW{gwNum}</span>
+                        <div style={{ display: 'grid', gap: '0.25rem', marginTop: '0.2rem' }}>
+                          {existingFixtures.filter((f) => f.gameweek === gwNum).map((f, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--grey)' }}>
+                              <span>{f.team_1_name}</span><span>vs</span><span>{f.team_2_name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

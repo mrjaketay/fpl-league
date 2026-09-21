@@ -68,6 +68,9 @@ export const api = {
   getManagers: () => request('/api/admin/managers'),
   suspendManager: (entryId: number, fromGameweek: number | null) =>
     request(`/api/admin/managers/${entryId}/suspend`, { method: 'PUT', body: JSON.stringify({ fromGameweek }) }),
+  getH2hFixtures: () => request('/api/admin/h2h/fixtures'),
+  regenerateH2h: (startGameweek: number, totalGameweeks: number) =>
+    request('/api/admin/h2h/regenerate', { method: 'POST', body: JSON.stringify({ startGameweek, totalGameweeks }) }),
 };
 
 export function setToken(token: string) {
