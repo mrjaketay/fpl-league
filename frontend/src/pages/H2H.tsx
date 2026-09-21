@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
+import AiFlyerModal from '../components/AiFlyerModal';
 
 export default function H2H() {
   const [gw, setGw] = useState(1);
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [table, setTable] = useState<any[]>([]);
   const [downloading, setDownloading] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [showAiFlyer, setShowAiFlyer] = useState(false);
   const fixturesCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,10 +23,20 @@ export default function H2H() {
   // Screenshots the fixtures card and downloads it as a PNG — good for
   // sharing the week's fixtures to a WhatsApp group as a ready-made flyer,
   // no extra design tool needed.
+  //
+  // The fixture rows normally fade in one after another with a staggered
+  // delay. html2canvas doesn't process CSS animations properly — it was
+  // capturing most rows still in their "not yet appeared" (invisible)
+  // state, which is why only the first fixture ever showed up in the
+  // downloaded image. Fix: switch to a static (non-animated) class just
+  // for the capture, wait a couple of frames for React to actually
+  // re-render with that change, then screenshot.
   async function downloadFixturesFlyer() {
     if (!fixturesCardRef.current) return;
     setDownloading(true);
+    setCapturing(true);
     try {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(fixturesCardRef.current, {
         backgroundColor: '#1c0021',
@@ -34,6 +47,7 @@ export default function H2H() {
       a.download = `h2h-fixtures-gw${gw}.png`;
       a.click();
     } finally {
+      setCapturing(false);
       setDownloading(false);
     }
   }
@@ -47,9 +61,14 @@ export default function H2H() {
             <GameweekSelect value={gw} onChange={setGw} />
           </div>
           {fixtures.length > 0 && (
-            <button className="btn btn--ghost" disabled={downloading} onClick={downloadFixturesFlyer}>
-              {downloading ? 'Preparing…' : '⬇ Download as image'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button className="btn btn--ghost" disabled={downloading} onClick={downloadFixturesFlyer}>
+                {downloading ? 'Preparing…' : '⬇ Download as image'}
+              </button>
+              <button className="btn btn--primary" onClick={() => setShowAiFlyer(true)}>
+                ✨ AI Flyer
+              </button>
+            </div>
           )}
         </div>
         {fixtures.length === 0 && (
@@ -60,7 +79,7 @@ export default function H2H() {
             const w1 = f.winner_name === f.manager_1_name;
             const w2 = f.winner_name === f.manager_2_name;
             return (
-              <div key={f.id} className="row-in" style={{ animationDelay: `${i * 0.05}s`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.15)', borderRadius: 8, padding: '0.75rem 1rem' }}>
+              <div key={f.id} className={capturing ? '' : 'row-in'} style={{ animationDelay: `${i * 0.05}s`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.15)', borderRadius: 8, padding: '0.75rem 1rem' }}>
                 <span style={{ fontWeight: w1 ? 700 : 400, color: w1 ? 'var(--green)' : 'var(--white)', flex: 1 }}>{f.team_1_name}</span>
                 <span className="pill pill--outline">VS</span>
                 <span style={{ fontWeight: w2 ? 700 : 400, color: w2 ? 'var(--green)' : 'var(--white)', flex: 1, textAlign: 'right' }}>{f.team_2_name}</span>
@@ -107,6 +126,8 @@ export default function H2H() {
           </tbody>
         </table></div>
       </div>
+
+      {showAiFlyer && <AiFlyerModal gw={gw} fixtures={fixtures} onClose={() => setShowAiFlyer(false)} />}
     </div>
   );
 }
