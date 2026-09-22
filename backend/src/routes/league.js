@@ -349,6 +349,7 @@ leagueRouter.get('/h2h/table', asyncHandler(async (_req, res) => {
       COALESCE(SUM(CASE WHEN wp.winner_entry_id = m.entry_id THEN 3 WHEN wp.entry_id IS NOT NULL AND wp.winner_entry_id IS NULL THEN 1 ELSE 0 END), 0) AS league_points
     FROM managers m
     LEFT JOIN with_points wp ON wp.entry_id = m.entry_id
+    WHERE m.suspended_from_gameweek IS NULL
     GROUP BY m.entry_id, m.manager_name, m.team_name
     ORDER BY league_points DESC, diff DESC
   `);
