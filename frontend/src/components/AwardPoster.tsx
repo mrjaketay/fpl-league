@@ -4,7 +4,7 @@ type Winner = { managerName: string; teamName: string };
 type IconKind = 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack' | 'hof';
 
 type Props = {
-  tone: 'green' | 'pink' | 'cyan';
+  tone: 'green' | 'pink' | 'cyan' | 'red';
   icon: IconKind;
   title: string;
   winners: Winner[];

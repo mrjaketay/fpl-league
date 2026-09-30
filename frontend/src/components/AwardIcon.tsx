@@ -17,7 +17,7 @@ export default function AwardIcon({ kind, size = 40 }: { kind: Kind; size?: numb
 
   const gradients: Record<Kind, [string, string]> = {
     motw: ['#00ff85', '#04f5ff'],
-    dotw: ['#ff2882', '#d1006b'],
+    dotw: ['#ff3b3b', '#b3001f'],
     defense: ['#04f5ff', '#0072ff'],
     midfield: ['#00ff85', '#04f5ff'],
     attack: ['#ffb627', '#ff2882'],

@@ -6,9 +6,9 @@ import AwardPoster from '../components/AwardPoster';
 import AwardIcon from '../components/AwardIcon';
 import GraffitiHOF from '../components/GraffitiHOF';
 
-const WEEKLY_AWARD_META: Record<string, { title: string; icon: 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack'; tone: 'green' | 'pink' | 'cyan' }> = {
+const WEEKLY_AWARD_META: Record<string, { title: string; icon: 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack'; tone: 'green' | 'red' | 'cyan' }> = {
   manager_of_week: { title: 'Manager of the Week', icon: 'motw', tone: 'green' },
-  donkey_of_week: { title: 'Donkey of the Week', icon: 'dotw', tone: 'pink' },
+  donkey_of_week: { title: 'Donkey of the Week', icon: 'dotw', tone: 'red' },
   the_wall: { title: 'Best Defense', icon: 'defense', tone: 'cyan' },
   midfield_king: { title: 'Best Midfield', icon: 'midfield', tone: 'cyan' },
   attack_king: { title: 'Best Attack', icon: 'attack', tone: 'cyan' },
@@ -80,9 +80,9 @@ export default function Home() {
           )}
           {quickStats.chief_donkey && (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span className="tip" data-tip="Most Donkey of the Week wins this season" style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>🐴 Chief Donkey:</span>
+              <span className="tip" data-tip="Most Donkey of the Week wins this season" style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>🫏 Chief Donkey:</span>
               <span style={{ fontWeight: 600 }}>{quickStats.chief_donkey.team_name}</span>
-              <span className="mono" style={{ color: 'var(--pink)', fontSize: '0.8rem' }}>({quickStats.chief_donkey.wins})</span>
+              <span className="mono" style={{ color: 'var(--red)', fontSize: '0.8rem' }}>({quickStats.chief_donkey.wins})</span>
             </div>
           )}
         </div>

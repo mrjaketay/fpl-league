@@ -75,6 +75,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; margin: 
 .pill--green { color: var(--purple-deep); background: var(--green); }
 .pill--cyan { color: var(--purple-deep); background: var(--cyan); }
 .pill--pink { color: var(--white); background: var(--pink); }
+.pill--red { color: var(--white); background: var(--red); }
 .pill--outline { color: var(--grey); border: 1px solid var(--line); background: transparent; }
 
 .btn {
@@ -388,6 +389,7 @@ tr { transition: background 0.15s ease; }
 }
 .poster--green { background: linear-gradient(150deg, #00c46f 0%, var(--purple) 75%); border: 1px solid rgba(0,255,133,0.4); }
 .poster--pink { background: linear-gradient(150deg, #d1006b 0%, var(--purple) 75%); border: 1px solid rgba(255,40,130,0.45); }
+.poster--red { background: linear-gradient(150deg, #b3001f 0%, var(--purple) 75%); border: 1px solid rgba(255,59,59,0.45); }
 .poster--cyan { background: linear-gradient(150deg, #00a4b3 0%, var(--purple) 75%); border: 1px solid rgba(4,245,255,0.4); }
 .poster .poster-emoji { font-size: 2.75rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35)); }
 .poster .poster-title { font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; }

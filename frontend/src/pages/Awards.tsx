@@ -86,11 +86,11 @@ export default function Awards() {
             </div>
           )}
           {dotwList.length > 0 && (
-            <div className="card fade-in fade-in-2" style={{ border: '1px solid rgba(255,40,130,0.3)', height: '100%' }}>
-              <span className="pill pill--pink">🐴 {dotwList.length > 1 ? 'Joint Donkey of the Week' : 'Donkey of the Week'}</span>
+            <div className="card fade-in fade-in-2" style={{ border: '1px solid rgba(255,59,59,0.3)', height: '100%' }}>
+              <span className="pill pill--red">🫏 {dotwList.length > 1 ? 'Joint Donkey of the Week' : 'Donkey of the Week'}</span>
               <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{namesList(dotwList)}</h3>
               <span style={{ color: 'var(--grey)' }}>{dotwList.map((a) => a.manager_name).join(' & ')}</span>
-              <div className="mono" style={{ fontSize: '1.8rem', color: 'var(--pink)', marginTop: '0.5rem' }}>{dotwList[0].value} pts</div>
+              <div className="mono" style={{ fontSize: '1.8rem', color: 'var(--red)', marginTop: '0.5rem' }}>{dotwList[0].value} pts</div>
             </div>
           )}
         </div>
