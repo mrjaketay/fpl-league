@@ -1,14 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconDownload } from './AwardIcon';
+import { IconDownload, IconRefresh } from './AwardIcon';
 
 // Pollinations.ai is genuinely free with no signup or API key — I just
 // build a URL and it returns an image. I only use it for an abstract
 // background vibe, never for the actual team names: AI image models
 // can't reliably render legible text, so the real fixture data is a
 // normal HTML overlay on top, not something the AI drew.
-function buildImageUrl(gw: number) {
+//
+// Being free and shared means it occasionally queues up or drops a
+// request under load, so this retries automatically a couple of times
+// (with a growing delay, and a cache-busting param so a retry doesn't
+// just hit the same failed response) before finally showing the error
+// with a manual retry button.
+const MAX_AUTO_RETRIES = 2;
+
+function buildImageUrl(gw: number, attempt: number) {
   const prompt = `abstract dynamic soccer stadium floodlights energetic gradient background, purple and green and cyan neon, no text, no people, no logos, digital art poster background`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${gw}&nologo=true`;
+  const bust = attempt > 0 ? `&retry=${attempt}` : '';
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1350&seed=${gw}&nologo=true${bust}`;
 }
 
 export default function AiFlyerModal({
@@ -22,14 +31,40 @@ export default function AiFlyerModal({
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [retrying, setRetrying] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const flyerRef = useRef<HTMLDivElement>(null);
-  const imageUrl = buildImageUrl(gw);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imageUrl = buildImageUrl(gw, attempt);
 
   useEffect(() => {
     setImageLoaded(false);
     setImageFailed(false);
+    setRetrying(false);
+    setAttempt(0);
+    return () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    };
   }, [gw]);
+
+  function handleImageError() {
+    if (attempt < MAX_AUTO_RETRIES) {
+      setRetrying(true);
+      retryTimer.current = setTimeout(() => {
+        setRetrying(false);
+        setAttempt((a) => a + 1);
+      }, 1500 * (attempt + 1));
+    } else {
+      setImageFailed(true);
+    }
+  }
+
+  function retryNow() {
+    setImageFailed(false);
+    setImageLoaded(false);
+    setAttempt((a) => a + 1);
+  }
 
   async function download() {
     if (!flyerRef.current) return;
@@ -74,7 +109,7 @@ export default function AiFlyerModal({
             src={imageUrl}
             crossOrigin="anonymous"
             onLoad={() => setImageLoaded(true)}
-            onError={() => setImageFailed(true)}
+            onError={handleImageError}
             alt=""
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
           />
@@ -94,16 +129,23 @@ export default function AiFlyerModal({
             </div>
           </div>
           {!imageLoaded && !imageFailed && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)' }}>
-              Generating background…
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--grey)', textAlign: 'center', padding: '0 1.5rem' }}>
+              {retrying
+                ? `The free AI image service is busy — retrying… (attempt ${attempt + 2} of ${MAX_AUTO_RETRIES + 1})`
+                : 'Generating background…'}
             </div>
           )}
         </div>
 
         {imageFailed && (
-          <p className="pill pill--pink" style={{ marginTop: '0.75rem' }}>
-            The free AI image service didn't respond — it's rate-limited and occasionally busy. Try again in a moment.
-          </p>
+          <div className="card" style={{ marginTop: '0.75rem', border: '1px solid var(--pink)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', padding: '0.85rem 1rem' }}>
+            <span style={{ color: 'var(--pink)', fontSize: '0.85rem' }}>
+              The free AI image service didn't respond after a few tries — it's rate-limited and occasionally busy.
+            </span>
+            <button className="btn btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={retryNow}>
+              <IconRefresh size={14} /> Try again
+            </button>
+          </div>
         )}
 
         <button className="btn btn--primary" style={{ width: '100%', marginTop: '1rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }} disabled={downloading || !imageLoaded} onClick={download}>
