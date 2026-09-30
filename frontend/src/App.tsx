@@ -43,6 +43,33 @@ export default function App() {
     api.info().then((d) => setLeagueName(d.name)).catch(() => {});
   }, []);
 
+  // Browser tab should show the actual league name, not a generic
+  // placeholder — falls back to the static index.html title until
+  // the league name loads.
+  useEffect(() => {
+    if (leagueName) document.title = `${leagueName} — Mini League HQ`;
+  }, [leagueName]);
+
+  // Nudge the page down a little on first load of each route so a
+  // visitor scanning a tall page realizes there's more below the
+  // fold, then settles back to the top. Skipped for anyone who's
+  // asked their OS for reduced motion.
+  useEffect(() => {
+    if (isAdmin) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (document.documentElement.scrollHeight <= window.innerHeight + 80) return;
+    const down = setTimeout(() => {
+      window.scrollTo({ top: 220, behavior: 'smooth' });
+    }, 650);
+    const up = setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 1550);
+    return () => {
+      clearTimeout(down);
+      clearTimeout(up);
+    };
+  }, [location.pathname, isAdmin]);
+
   const initials = (leagueName || 'FPL')
     .split(' ')
     .map((w) => w[0])
