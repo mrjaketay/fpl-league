@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { IconDownload } from './AwardIcon';
 
 // Pollinations.ai is genuinely free with no signup or API key — I just
 // build a URL and it returns an image. I only use it for an abstract
@@ -105,8 +106,8 @@ export default function AiFlyerModal({
           </p>
         )}
 
-        <button className="btn btn--primary" style={{ width: '100%', marginTop: '1rem' }} disabled={downloading || !imageLoaded} onClick={download}>
-          {downloading ? 'Preparing…' : '⬇ Download Flyer'}
+        <button className="btn btn--primary" style={{ width: '100%', marginTop: '1rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }} disabled={downloading || !imageLoaded} onClick={download}>
+          {downloading ? 'Preparing…' : <><IconDownload size={14} /> Download Flyer</>}
         </button>
       </div>
     </div>

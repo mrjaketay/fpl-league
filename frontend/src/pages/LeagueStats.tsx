@@ -1,27 +1,31 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
+import {
+  IconCards, IconTarget, IconRocket, IconCrown, IconTrendUp, IconTrendDown,
+  IconAlertTriangle, IconTrophy, IconHorseshoe, IconShieldCheck, IconBolt,
+} from '../components/AwardIcon';
 
-const CHIP_META: Record<string, { label: string; emoji: string }> = {
-  wildcard: { label: 'Wildcard', emoji: '🃏' },
-  free_hit: { label: 'Free Hit', emoji: '🎯' },
-  bench_boost: { label: 'Bench Boost', emoji: '🚀' },
-  triple_captain: { label: 'Triple Captain', emoji: '👑' },
+const CHIP_META: Record<string, { label: string; Icon: typeof IconCards }> = {
+  wildcard: { label: 'Wildcard', Icon: IconCards },
+  free_hit: { label: 'Free Hit', Icon: IconTarget },
+  bench_boost: { label: 'Bench Boost', Icon: IconRocket },
+  triple_captain: { label: 'Triple Captain', Icon: IconCrown },
 };
 
-const LEADERBOARDS: { key: string; label: string; emoji: string }[] = [
-  { key: 'weeks_in_1st', label: 'Most Weeks at #1', emoji: '👑' },
-  { key: 'weeks_in_top3', label: 'Most Weeks in Top 3', emoji: '📈' },
-  { key: 'weeks_in_last', label: 'Most Weeks in Last', emoji: '📉' },
-  { key: 'weeks_in_bottom3', label: 'Most Weeks in Bottom 3', emoji: '⚠️' },
-  { key: 'motw_wins', label: 'Most Manager of the Week Wins', emoji: '🏆' },
-  { key: 'dotw_wins', label: 'Most Donkey of the Week Wins', emoji: '🐴' },
+const LEADERBOARDS: { key: string; label: string; Icon: typeof IconCrown }[] = [
+  { key: 'weeks_in_1st', label: 'Most Weeks at #1', Icon: IconCrown },
+  { key: 'weeks_in_top3', label: 'Most Weeks in Top 3', Icon: IconTrendUp },
+  { key: 'weeks_in_last', label: 'Most Weeks in Last', Icon: IconTrendDown },
+  { key: 'weeks_in_bottom3', label: 'Most Weeks in Bottom 3', Icon: IconAlertTriangle },
+  { key: 'motw_wins', label: 'Most Manager of the Week Wins', Icon: IconTrophy },
+  { key: 'dotw_wins', label: 'Most Donkey of the Week Wins', Icon: IconHorseshoe },
 ];
 
-const QUARTER_CATS: { key: 'defense' | 'midfield' | 'attack'; label: string; emoji: string }[] = [
-  { key: 'defense', label: 'Best Defense', emoji: '🧱' },
-  { key: 'midfield', label: 'Best Midfield', emoji: '🎯' },
-  { key: 'attack', label: 'Best Attack', emoji: '⚡' },
+const QUARTER_CATS: { key: 'defense' | 'midfield' | 'attack'; label: string; Icon: typeof IconShieldCheck }[] = [
+  { key: 'defense', label: 'Best Defense', Icon: IconShieldCheck },
+  { key: 'midfield', label: 'Best Midfield', Icon: IconTarget },
+  { key: 'attack', label: 'Best Attack', Icon: IconBolt },
 ];
 
 export default function LeagueStats() {
@@ -95,11 +99,11 @@ export default function LeagueStats() {
           {quarterBoard.from && <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>GW{quarterBoard.from}–{quarterBoard.to} · live running total, not yet locked in</span>}
         </div>
         <div className="three-col">
-          {QUARTER_CATS.map(({ key, label, emoji }) => {
+          {QUARTER_CATS.map(({ key, label, Icon }) => {
             const list = (quarterBoard[key] ?? []).slice(0, 5);
             return (
               <div key={key} className="stat-tile" style={{ alignItems: 'stretch' }}>
-                <span className="label">{emoji} {label}</span>
+                <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Icon size={14} /> {label}</span>
                 {list.length === 0 ? (
                   <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No data yet</span>
                 ) : (
@@ -124,20 +128,20 @@ export default function LeagueStats() {
           "Weeks" here means total gameweeks spent in that spot across the season — not necessarily in a row.
         </p>
         <div className="two-col-even">
-          {LEADERBOARDS.map(({ key, label, emoji }) => {
+          {LEADERBOARDS.map(({ key, label, Icon }) => {
             const sorted = [...longevity].sort((a, b) => b[key] - a[key]);
             const top = sorted[0];
             if (!top || top[key] === 0) {
               return (
                 <div key={key} className="stat-tile">
-                  <span className="label">{emoji} {label}</span>
+                  <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Icon size={14} /> {label}</span>
                   <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>Not enough data yet</span>
                 </div>
               );
             }
             return (
               <div key={key} className="stat-tile">
-                <span className="label">{emoji} {label}</span>
+                <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Icon size={14} /> {label}</span>
                 <span className="value" style={{ fontSize: '1.1rem' }}>{top.team_name}</span>
                 <span className="mono" style={{ color: 'var(--green)', fontSize: '0.85rem' }}>{top[key]} {key.includes('wins') ? 'wins' : 'weeks'}</span>
               </div>
@@ -156,7 +160,7 @@ export default function LeagueStats() {
               const meta = CHIP_META[type];
               return (
                 <div key={type} className="stat-tile" style={{ alignItems: 'stretch' }}>
-                  <span className="label">{meta.emoji} {meta.label}</span>
+                  <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><meta.Icon size={14} /> {meta.label}</span>
                   {entries.length === 0 ? (
                     <span style={{ color: 'var(--grey)', fontSize: '0.82rem', marginTop: '0.3rem' }}>Not played yet</span>
                   ) : (

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import AiFlyerModal from '../components/AiFlyerModal';
+import { IconDownload, IconSparkles } from '../components/AwardIcon';
 
 export default function H2H() {
   const [gw, setGw] = useState(1);
@@ -62,11 +63,11 @@ export default function H2H() {
           </div>
           {fixtures.length > 0 && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn--ghost" disabled={downloading} onClick={downloadFixturesFlyer}>
-                {downloading ? 'Preparing…' : '⬇ Download as image'}
+              <button className="btn btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} disabled={downloading} onClick={downloadFixturesFlyer}>
+                {downloading ? 'Preparing…' : <><IconDownload size={14} /> Download as image</>}
               </button>
-              <button className="btn btn--primary" onClick={() => setShowAiFlyer(true)}>
-                ✨ AI Flyer
+              <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowAiFlyer(true)}>
+                <IconSparkles size={14} /> AI Flyer
               </button>
             </div>
           )}

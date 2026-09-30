@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { api, isLoggedIn, clearToken } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
+import {
+  IconRefresh, IconSwords, IconUsers, IconTrophy, IconSettings, IconImage,
+  IconSave, IconLogOut, IconCrown, IconAlertTriangle,
+} from '../components/AwardIcon';
 
 type QuarterRange = [number, number];
 type MonthRange = [string, number, number];
@@ -134,14 +138,14 @@ export default function Admin() {
     api.getH2hFixtures().then(setExistingFixtures).catch(() => {});
   }, [section]);
 
-  const SECTIONS: { key: typeof section; label: string; icon: string }[] = [
-    { key: 'sync', label: 'Sync Data', icon: '🔄' },
-    { key: 'fixtures', label: 'H2H Fixtures', icon: '⚔️' },
-    { key: 'teams', label: 'Manage Teams', icon: '👥' },
-    { key: 'awards', label: 'Awards', icon: '🏆' },
-    { key: 'settings', label: 'League Settings', icon: '⚙️' },
-    { key: 'flyers', label: 'Award Flyers', icon: '🖼️' },
-    { key: 'backup', label: 'Backup / Export', icon: '💾' },
+  const SECTIONS: { key: typeof section; label: string; Icon: typeof IconRefresh }[] = [
+    { key: 'sync', label: 'Sync Data', Icon: IconRefresh },
+    { key: 'fixtures', label: 'H2H Fixtures', Icon: IconSwords },
+    { key: 'teams', label: 'Manage Teams', Icon: IconUsers },
+    { key: 'awards', label: 'Awards', Icon: IconTrophy },
+    { key: 'settings', label: 'League Settings', Icon: IconSettings },
+    { key: 'flyers', label: 'Award Flyers', Icon: IconImage },
+    { key: 'backup', label: 'Backup / Export', Icon: IconSave },
   ];
 
   return (
@@ -162,8 +166,8 @@ export default function Admin() {
             <span className="mono" style={{ color: 'var(--cyan)', fontWeight: 700 }}>GW {quickStats.current_gameweek ?? '—'}</span>
           </div>
           {quickStats.season_leader && (
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>👑 Leader:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ color: 'var(--grey)', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}><IconCrown size={14} /> Leader:</span>
               <span style={{ fontWeight: 600 }}>{quickStats.season_leader.team_name}</span>
             </div>
           )}
@@ -179,12 +183,12 @@ export default function Admin() {
               className={`admin-sidebar-item ${section === s.key ? 'admin-sidebar-item--active' : ''}`}
               onClick={() => setSection(s.key)}
             >
-              <span>{s.icon}</span> {s.label}
+              <s.Icon size={16} /> {s.label}
             </button>
           ))}
           <div className="admin-sidebar-divider" />
           <button className="admin-sidebar-item" onClick={() => { clearToken(); window.location.href = '/'; }}>
-            <span>🚪</span> Log out
+            <IconLogOut size={16} /> Log out
           </button>
         </div>
 
@@ -244,8 +248,8 @@ export default function Admin() {
                     <span className="field-label">To</span>
                     <GameweekSelect value={totalGw} onChange={setTotalGw} />
                     {!confirmingRegenerate ? (
-                      <button className="btn btn--ghost" style={{ borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => setConfirmingRegenerate(true)}>
-                        ⚠ Regenerate
+                      <button className="btn btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', borderColor: 'var(--pink)', color: 'var(--pink)' }} onClick={() => setConfirmingRegenerate(true)}>
+                        <IconAlertTriangle size={14} /> Regenerate
                       </button>
                     ) : (
                       <div className="card" style={{ border: '1px solid var(--pink)', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>

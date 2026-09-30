@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import TeamModal from './TeamModal';
+import AwardIcon from './AwardIcon';
 
 type Manager = {
   entry_id: number;
@@ -58,15 +59,15 @@ export default function ManagerModal({ manager, onClose, defaultGw = 1 }: { mana
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
             {manager.motw_wins != null && (
               <div style={{ flex: 1, textAlign: 'center', background: 'rgba(0,255,133,0.08)', borderRadius: 8, padding: '0.6rem' }}>
-                <div style={{ fontSize: '1.3rem' }}>🏆</div>
-                <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700 }}>{manager.motw_wins}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--green)' }}><AwardIcon kind="motw" size={22} /></div>
+                <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: '0.3rem' }}>{manager.motw_wins}</div>
                 <div style={{ color: 'var(--grey)', fontSize: '0.7rem' }}>Manager of the Week</div>
               </div>
             )}
             {manager.dotw_wins != null && (
-              <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,40,130,0.08)', borderRadius: 8, padding: '0.6rem' }}>
-                <div style={{ fontSize: '1.3rem' }}>🫏</div>
-                <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700 }}>{manager.dotw_wins}</div>
+              <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,59,59,0.08)', borderRadius: 8, padding: '0.6rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--red)' }}><AwardIcon kind="dotw" size={22} /></div>
+                <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: '0.3rem' }}>{manager.dotw_wins}</div>
                 <div style={{ color: 'var(--grey)', fontSize: '0.7rem' }}>Donkey of the Week</div>
               </div>
             )}

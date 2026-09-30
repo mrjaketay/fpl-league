@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from './GameweekSelect';
 import PitchMarkings from './PitchMarkings';
+import { IconLock } from './AwardIcon';
 
 const CHIP_LABELS: Record<string, string> = {
   wildcard: 'Wildcard', free_hit: 'Free Hit', bench_boost: 'Bench Boost', triple_captain: 'Triple Captain',
@@ -86,7 +87,7 @@ export default function TeamModal({
 
         {data?.notAvailable && !loading && (
           <div style={{ marginTop: '1.5rem', textAlign: 'center', padding: '2rem 1rem', color: 'var(--grey)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔒</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}><IconLock size={30} /></div>
             <p>No squad locked in for Gameweek {gw} yet — it either hasn't reached its deadline, or hasn't been played.</p>
           </div>
         )}

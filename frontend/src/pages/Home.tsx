@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ManagerModal from '../components/ManagerModal';
 import AwardPoster from '../components/AwardPoster';
-import AwardIcon from '../components/AwardIcon';
+import AwardIcon, { IconCrown } from '../components/AwardIcon';
 import GraffitiHOF from '../components/GraffitiHOF';
 
 const WEEKLY_AWARD_META: Record<string, { title: string; icon: 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack'; tone: 'green' | 'red' | 'cyan' }> = {
@@ -74,13 +74,13 @@ export default function Home() {
           </div>
           {quickStats.season_leader && (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span className="tip" data-tip="Highest total points in the league right now" style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>👑 Leader:</span>
+              <span className="tip" data-tip="Highest total points in the league right now" style={{ color: 'var(--grey)', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}><IconCrown size={13} /> Leader:</span>
               <span style={{ fontWeight: 600 }}>{quickStats.season_leader.team_name}</span>
             </div>
           )}
           {quickStats.chief_donkey && (
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-              <span className="tip" data-tip="Most Donkey of the Week wins this season" style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>🫏 Chief Donkey:</span>
+              <span className="tip" data-tip="Most Donkey of the Week wins this season" style={{ color: 'var(--grey)', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}><AwardIcon kind="dotw" size={13} /> Chief Donkey:</span>
               <span style={{ fontWeight: 600 }}>{quickStats.chief_donkey.team_name}</span>
               <span className="mono" style={{ color: 'var(--red)', fontSize: '0.8rem' }}>({quickStats.chief_donkey.wins})</span>
             </div>
