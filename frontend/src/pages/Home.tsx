@@ -166,24 +166,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-          </div>
-
-          <div style={{ display: 'grid', gap: '1.5rem' }}>
-            <div className="card fade-in fade-in-2">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <span className="section-heading" style={{ marginBottom: 0 }}>STANDINGS</span>
-                <Link to="/standings" style={{ fontSize: '0.8rem' }}>Full table →</Link>
-              </div>
-              <div style={{ display: 'grid', gap: '0.5rem' }}>
-                {standings.slice(0, 8).map((s, i) => (
-                  <button key={s.entry_id} className="row-in" style={{ ...rowBtn, animationDelay: `${i * 0.04}s`, background: i === 0 ? 'rgba(0,255,133,0.08)' : 'transparent' }} onClick={() => openManager(s.entry_id)}>
-                    <span className="mono" style={{ color: 'var(--grey)', width: 20 }}>{i + 1}</span>
-                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{s.team_name}</span>
-                    <span className="mono" style={{ color: 'var(--green)' }}>{s.total_points_after}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {monthlyAward && monthlyAward.winners.length > 0 && (
               <div className="card card--hero fade-in fade-in-3">
@@ -204,6 +186,24 @@ export default function Home() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div className="card fade-in fade-in-2">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <span className="section-heading" style={{ marginBottom: 0 }}>STANDINGS</span>
+                <Link to="/standings" style={{ fontSize: '0.8rem' }}>Full table →</Link>
+              </div>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {standings.slice(0, 8).map((s, i) => (
+                  <button key={s.entry_id} className="row-in" style={{ ...rowBtn, animationDelay: `${i * 0.04}s`, background: i === 0 ? 'rgba(0,255,133,0.08)' : 'transparent' }} onClick={() => openManager(s.entry_id)}>
+                    <span className="mono" style={{ color: 'var(--grey)', width: 20 }}>{i + 1}</span>
+                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 600 }}>{s.team_name}</span>
+                    <span className="mono" style={{ color: 'var(--green)' }}>{s.total_points_after}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="card fade-in fade-in-3">
               <div className="section-heading">PRICE CHANGES (SEASON)</div>
