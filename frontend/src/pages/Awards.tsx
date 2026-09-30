@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
+import {
+  IconStar, IconSkull, IconChair, IconTrendDown, IconShieldCheck,
+  IconShieldAlert, IconTarget, IconBolt, IconMedal,
+} from '../components/AwardIcons';
 
-const LABELS: Record<string, { label: string; tone: 'green' | 'pink' | 'cyan' | 'outline'; emoji: string }> = {
-  manager_of_week: { label: 'Manager of the Week', tone: 'green', emoji: '🏆' },
-  donkey_of_week: { label: 'Donkey of the Week', tone: 'pink', emoji: '🐴' },
-  hall_of_fame: { label: 'Hall of Fame (100+, no chip)', tone: 'cyan', emoji: '⭐' },
-  captains_curse: { label: "Captain's Curse", tone: 'pink', emoji: '💀' },
-  bench_bandit: { label: 'Bench Bandit', tone: 'outline', emoji: '🪑' },
-  transfer_villain: { label: 'Transfer Villain', tone: 'pink', emoji: '🔻' },
-  the_wall: { label: 'The Wall (best defense)', tone: 'green', emoji: '🧱' },
-  the_sieve: { label: 'The Sieve (worst defense)', tone: 'pink', emoji: '🕳️' },
-  midfield_king: { label: 'Midfield King (best midfield)', tone: 'green', emoji: '🎯' },
-  midfield_flop: { label: 'Midfield Flop (worst midfield)', tone: 'pink', emoji: '🎯' },
-  attack_king: { label: 'Attack King (best attack)', tone: 'green', emoji: '⚡' },
-  attack_flop: { label: 'Attack Flop (worst attack)', tone: 'pink', emoji: '⚡' },
+type Tone = 'green' | 'pink' | 'red';
+
+const LABELS: Record<string, { label: string; tone: Tone; Icon: typeof IconStar }> = {
+  manager_of_week: { label: 'Manager of the Week', tone: 'green', Icon: IconMedal },
+  donkey_of_week: { label: 'Donkey of the Week', tone: 'pink', Icon: IconSkull },
+  hall_of_fame: { label: 'Hall of Fame (100+, no chip)', tone: 'green', Icon: IconStar },
+  captains_curse: { label: "Captain's Curse", tone: 'red', Icon: IconSkull },
+  bench_bandit: { label: 'Bench Bandit', tone: 'red', Icon: IconChair },
+  transfer_villain: { label: 'Transfer Villain', tone: 'red', Icon: IconTrendDown },
+  the_wall: { label: 'The Wall (best defense)', tone: 'green', Icon: IconShieldCheck },
+  the_sieve: { label: 'The Sieve (worst defense)', tone: 'red', Icon: IconShieldAlert },
+  midfield_king: { label: 'Midfield King (best midfield)', tone: 'green', Icon: IconTarget },
+  midfield_flop: { label: 'Midfield Flop (worst midfield)', tone: 'red', Icon: IconTarget },
+  attack_king: { label: 'Attack King (best attack)', tone: 'green', Icon: IconBolt },
+  attack_flop: { label: 'Attack Flop (worst attack)', tone: 'red', Icon: IconBolt },
 };
 
 type Award = {
@@ -96,11 +102,12 @@ export default function Awards() {
           <div className="awards-list">
             {restTypes.map((type, i) => {
               const winners = awards.filter((a) => a.award_type === type);
-              const meta = LABELS[type] ?? { label: type, tone: 'outline' as const, emoji: '🎖️' };
+              const meta = LABELS[type] ?? { label: type, tone: 'red' as const, Icon: IconTarget };
+              const Icon = meta.Icon;
               return (
                 <div key={type} className={`row-in award-row award-row--${meta.tone}`} style={{ animationDelay: `${i * 0.05}s` }}>
                   <div className="award-row__tag">
-                    <span className="award-row__emoji">{meta.emoji}</span>
+                    <span className="award-row__icon"><Icon size={17} /></span>
                     <span className="award-row__label">{winners.length > 1 ? `Joint ${meta.label}` : meta.label}</span>
                   </div>
                   <div className="award-row__who">
@@ -134,10 +141,13 @@ export default function Awards() {
               const rowsForType = tally.filter((t) => t.award_type === type).sort((a, b) => b.wins - a.wins);
               const topWins = rowsForType[0]?.wins;
               const leaders = rowsForType.filter((r) => r.wins === topWins);
-              const meta = LABELS[type] ?? { label: type, emoji: '🎖️' };
+              const meta = LABELS[type] ?? { label: type, tone: 'red' as const, Icon: IconTarget };
+              const Icon = meta.Icon;
               return (
                 <div key={type} className="stat-tile row-in" style={{ animationDelay: `${i * 0.04}s` }}>
-                  <span className="label">{meta.emoji} {meta.label}</span>
+                  <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Icon size={15} /> {meta.label}
+                  </span>
                   <span className="value" style={{ fontSize: '1.05rem' }}>{leaders.map((l) => l.team_name).join(' & ')}</span>
                   <span className="mono" style={{ color: 'var(--green)', fontSize: '0.85rem' }}>{topWins} win{topWins !== 1 ? 's' : ''}</span>
                 </div>

@@ -10,6 +10,7 @@
   --green-dim: #05c96b;
   --cyan: #04f5ff;
   --pink: #ff2882;
+  --red: #ff3b3b;
   --white: #f6f6fa;
   --grey: #a89bb0;
   --line: rgba(246, 246, 250, 0.12);
@@ -259,61 +260,60 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .admin-sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
 .admin-content { display: grid; gap: 1.25rem; max-width: 900px; }
 
-/* Awards list — a scoreboard-style row per award, used for "Other
-   Awards This Week". A full-width row scans left-to-right like a
-   ticker line (tag → winner → value), so rows stay flush at every
-   width instead of leaving ragged gaps the way a wrapped tile grid
-   does with uneven content lengths. The category tag is plain,
-   colour-coded text with a matching left accent bar rather than a
-   rounded pill — reserving the pill shape for the season's headline
-   Manager/Donkey of the Week cards above. */
+/* Awards list — a compact scoreboard row per award, used for "Other
+   Awards This Week". Two columns on wider screens so the whole
+   week's awards read in a couple of glance-able lines instead of one
+   long vertical stack. Color is deliberately rationed: only the icon
+   and the thin left bar carry the green/red accent (good vs. bad
+   week) — the label and value stay neutral white/grey so the row
+   doesn't compete with itself for attention. No pill shapes here;
+   the pill is reserved for the season's headline Manager/Donkey of
+   the Week cards above. */
 .awards-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.5rem;
 }
 .award-row {
   --tone: var(--grey);
   display: grid;
-  grid-template-columns: minmax(150px, 0.85fr) 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   background: rgba(0,0,0,0.2);
   border: 1px solid var(--line);
   border-left: 3px solid var(--tone);
   border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
 }
 .award-row--green { --tone: var(--green); }
-.award-row--cyan { --tone: var(--cyan); }
+.award-row--red { --tone: var(--red); }
 .award-row--pink { --tone: var(--pink); }
-.award-row--outline { --tone: var(--grey); }
 
-.award-row__tag { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
-.award-row__emoji { font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+.award-row__tag { display: flex; align-items: center; gap: 0.55rem; min-width: 0; margin-bottom: 0.25rem; }
+.award-row__icon { color: var(--tone); display: flex; flex-shrink: 0; }
 .award-row__label {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--tone);
-  line-height: 1.25;
+  color: var(--grey);
+  line-height: 1.2;
 }
-.award-row__who { display: flex; flex-direction: column; min-width: 0; }
-.award-row__winner { font-weight: 600; overflow-wrap: break-word; }
-.award-row__manager { color: var(--grey); font-size: 0.78rem; }
+.award-row__who { display: flex; flex-direction: column; min-width: 0; grid-column: 1; }
+.award-row__winner { font-weight: 600; overflow-wrap: break-word; font-size: 0.92rem; }
+.award-row__manager { color: var(--grey); font-size: 0.74rem; }
 .award-row__value {
-  font-size: 1.15rem;
-  color: var(--tone);
+  grid-row: 1 / 3;
+  grid-column: 2;
+  font-size: 1.1rem;
+  color: var(--white);
   text-align: right;
   white-space: nowrap;
 }
 
-@media (max-width: 560px) {
-  .award-row {
-    grid-template-columns: 1fr auto;
-  }
-  .award-row__tag { grid-column: 1 / -1; }
+@media (max-width: 400px) {
+  .award-row__value { font-size: 1rem; }
 }
 
 @media (max-width: 760px) {
