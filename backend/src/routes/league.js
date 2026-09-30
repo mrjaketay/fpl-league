@@ -145,6 +145,30 @@ leagueRouter.get('/stats/quarterly-leaderboard/:quarter', asyncHandler(async (re
   });
 }));
 
+// Most recently computed Manager of the Month — lets the homepage show
+// whichever month an admin last locked in, without having to work out
+// the current calendar month itself. Registered before the /:month
+// route below so Express doesn't swallow "latest" as a month param.
+leagueRouter.get('/awards/monthly/latest', asyncHandler(async (_req, res) => {
+  const { rows: maxRows } = await query(
+    `SELECT MAX(month) AS month FROM awards WHERE award_type = 'manager_of_month'`
+  );
+  const month = maxRows[0]?.month;
+  if (!month) return res.json({ month: null, name: null, winners: [] });
+
+  const { rows: winners } = await query(
+    `SELECT a.*, m.manager_name, m.team_name
+     FROM awards a JOIN managers m ON m.entry_id = a.entry_id
+     WHERE a.month = $1 AND a.award_type = 'manager_of_month'`,
+    [month]
+  );
+  const { rows: settingRows } = await query(`SELECT value FROM league_settings WHERE key = 'month_mapping'`);
+  const mapping = settingRows[0]?.value;
+  const name = mapping?.[month - 1]?.[0] ?? null;
+
+  res.json({ month, name, winners });
+}));
+
 // Manager of the Month for one month index (1-based, matches month_mapping order).
 leagueRouter.get('/awards/monthly/:month', asyncHandler(async (req, res) => {
   const { rows } = await query(

@@ -41,6 +41,7 @@ export const api = {
   team: (entryId: number, gw: number) => request(`/api/league/team/${entryId}/${gw}`),
   flyers: (gw: number) => request(`/api/league/flyers/${gw}`),
   monthlyAward: (month: number) => request(`/api/league/awards/monthly/${month}`),
+  latestMonthlyAward: () => request(`/api/league/awards/monthly/latest`),
   quarterlyLeaderboard: (quarter: number) => request(`/api/league/stats/quarterly-leaderboard/${quarter}`),
   quickStats: () => request('/api/league/quick-stats'),
 

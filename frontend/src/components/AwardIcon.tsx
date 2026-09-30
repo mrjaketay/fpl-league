@@ -248,6 +248,17 @@ export function IconSparkles({ size = 18 }: IconProps) {
   );
 }
 
+export function IconCalendarStar({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <rect x="3.5" y="5" width="17" height="15" rx="2" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 3v3.5M16 3v3.5" />
+      <path d="M12 12l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function IconDownload({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} {...base}>
@@ -263,7 +274,7 @@ export function IconDownload({ size = 18 }: IconProps) {
 // passing a plain `kind` string instead of importing components. ---
 export type AwardKind =
   | 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack' | 'hof'
-  | 'curse' | 'bench' | 'villain' | 'sieve';
+  | 'curse' | 'bench' | 'villain' | 'sieve' | 'month';
 
 const AWARD_KIND_MAP: Record<AwardKind, (p: IconProps) => JSX.Element> = {
   motw: IconTrophy,
@@ -276,6 +287,7 @@ const AWARD_KIND_MAP: Record<AwardKind, (p: IconProps) => JSX.Element> = {
   bench: IconChair,
   villain: IconTrendDown,
   sieve: IconShieldAlert,
+  month: IconCalendarStar,
 };
 
 export default function AwardIcon({ kind, size = 18 }: { kind: AwardKind; size?: number }) {

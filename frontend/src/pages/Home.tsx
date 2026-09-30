@@ -23,6 +23,7 @@ export default function Home() {
   const [longevity, setLongevity] = useState<any[]>([]);
   const [prices, setPrices] = useState<{ risers: any[]; fallers: any[] }>({ risers: [], fallers: [] });
   const [quickStats, setQuickStats] = useState<any>(null);
+  const [monthlyAward, setMonthlyAward] = useState<{ month: number; name: string; winners: any[] } | null>(null);
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function Home() {
       setQuickStats(d.quick_stats);
     }).catch(() => {});
     api.priceChanges().then(setPrices).catch(() => {});
+    api.latestMonthlyAward().then(setMonthlyAward).catch(() => {});
   }, []);
 
   function openManager(entryId: number) {
@@ -182,6 +184,26 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
+            {monthlyAward && monthlyAward.winners.length > 0 && (
+              <div className="card card--hero fade-in fade-in-3">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <AwardIcon kind="month" size={20} />
+                  <span className="field-label">Manager of the Month — {monthlyAward.name}</span>
+                </div>
+                <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  {monthlyAward.winners.map((w: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.75rem' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <button onClick={() => openManager(w.entry_id)} style={linkBtn}>{w.team_name}</button>
+                        <span style={{ color: 'var(--grey)', fontSize: '0.78rem' }}> {w.manager_name}</span>
+                      </div>
+                      <span className="mono" style={{ color: 'var(--green)', fontWeight: 700, whiteSpace: 'nowrap' }}>{w.value} pts</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="card fade-in fade-in-3">
               <div className="section-heading">PRICE CHANGES (SEASON)</div>
