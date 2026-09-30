@@ -105,6 +105,31 @@ input:focus, select:focus { outline: 2px solid var(--green); outline-offset: 1px
 
 a { color: var(--cyan); }
 
+/* Site header — sticky so the logo and nav stay reachable while
+   scrolling a long page, instead of disappearing after the first
+   screen. Full-bleed bar with a blurred, translucent version of the
+   page background so content scrolling underneath stays legible
+   without the header turning into a flat opaque strip. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(28, 0, 33, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.site-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.85rem clamp(1.25rem, 4vw, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); }
 th { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--grey); }

@@ -63,8 +63,8 @@ export default function App() {
   return (
     <>
       <BackgroundArt />
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '1.5rem clamp(1.25rem, 4vw, 3rem) 3rem' }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <header className="site-header">
+        <div className="site-header-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <LeagueLogo initials={initials} size={48} />
             <div>
@@ -80,8 +80,10 @@ export default function App() {
             <NavLink to="/stats" style={navStyle}>League Stats</NavLink>
             <NavLink to="/admin" style={navStyle}>Admin</NavLink>
           </nav>
-        </header>
+        </div>
+      </header>
 
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '1.5rem clamp(1.25rem, 4vw, 3rem) 3rem' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/standings" element={<Standings />} />
