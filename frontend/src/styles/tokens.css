@@ -24,6 +24,14 @@
 
   --radius: 10px;
   --radius-sm: 6px;
+
+  /* Elevation — a real shadow system instead of flat panels with just a
+     border. This is most of what separates "functional prototype" from
+     "finished product": depth, not more color. Each card lifts subtly
+     off the page; hero/modal surfaces lift further. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 30px -10px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 24px 60px -16px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 * { box-sizing: border-box; }
@@ -34,7 +42,20 @@ html, body, #root {
   background: var(--purple-deep);
   color: var(--white);
   font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+::selection { background: rgba(0, 255, 133, 0.28); color: var(--white); }
+
+/* Thin, branded scrollbar instead of the default chunky OS one —
+   small detail, but a default scrollbar is one of the fastest tells
+   that a dark-themed site wasn't finished. */
+html { scrollbar-width: thin; scrollbar-color: rgba(246,246,250,0.25) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(246,246,250,0.18); border-radius: 999px; border: 2px solid var(--purple-deep); }
+::-webkit-scrollbar-thumb:hover { background: rgba(246,246,250,0.3); }
 
 body {
   background-image:
@@ -44,20 +65,36 @@ body {
   background-attachment: fixed;
 }
 
-h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; margin: 0; }
-.mono { font-family: var(--font-mono); }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; margin: 0; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 .card {
+  position: relative;
   background: rgba(246, 246, 250, 0.05);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1.5rem;
   backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-md);
+}
+
+/* A faint top edge-light, like glass catching light from above — cheap
+   trick, but it's what makes a translucent dark panel read as a
+   deliberate material rather than "border and done". */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  pointer-events: none;
 }
 
 .card--hero {
   background: linear-gradient(135deg, var(--purple-light) 0%, var(--purple) 100%);
   border: 1px solid rgba(0, 255, 133, 0.25);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,255,133,0.06);
 }
 
 .pill {
@@ -71,12 +108,13 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; margin: 
   border-radius: 999px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  box-shadow: var(--shadow-sm);
 }
 .pill--green { color: var(--purple-deep); background: var(--green); }
 .pill--cyan { color: var(--purple-deep); background: var(--cyan); }
 .pill--pink { color: var(--white); background: var(--pink); }
 .pill--red { color: var(--white); background: var(--red); }
-.pill--outline { color: var(--grey); border: 1px solid var(--line); background: transparent; }
+.pill--outline { color: var(--grey); border: 1px solid var(--line); background: transparent; box-shadow: none; }
 
 .btn {
   font-family: var(--font-body);
@@ -86,12 +124,14 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; margin: 
   border-radius: var(--radius-sm);
   padding: 0.55rem 1rem;
   cursor: pointer;
-  transition: transform 0.08s ease, opacity 0.15s ease;
+  transition: transform 0.12s ease, opacity 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.btn:hover { opacity: 0.9; }
 .btn:active { transform: scale(0.98); }
-.btn--primary { background: var(--green); color: var(--purple-deep); }
+.btn--primary { background: var(--green); color: var(--purple-deep); box-shadow: var(--shadow-sm); }
+.btn--primary:hover { box-shadow: 0 8px 20px -6px rgba(0,255,133,0.45); transform: translateY(-1px); }
 .btn--ghost { background: transparent; color: var(--white); border: 1px solid var(--line); }
+.btn--ghost:hover { background: rgba(246,246,250,0.06); border-color: rgba(246,246,250,0.28); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
 input, select {
   font-family: var(--font-mono);
@@ -100,10 +140,20 @@ input, select {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.65rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-input:focus, select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+input:focus, select:focus {
+  outline: none;
+  border-color: rgba(0,255,133,0.5);
+  box-shadow: 0 0 0 3px rgba(0,255,133,0.18);
+}
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,255,133,0.28);
+  border-radius: var(--radius-sm);
+}
 
-a { color: var(--cyan); }
+a { color: var(--cyan); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 
 /* Site header — sticky so the logo and nav stay reachable while
    scrolling a long page, instead of disappearing after the first
@@ -118,6 +168,7 @@ a { color: var(--cyan); }
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 12px 30px -16px rgba(0, 0, 0, 0.6);
 }
 .site-header-inner {
   max-width: 1400px;
@@ -156,9 +207,9 @@ a { color: var(--cyan); }
 
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); }
-th { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--grey); }
-td.num { font-family: var(--font-mono); }
-tr:hover td { background: rgba(246, 246, 250, 0.03); }
+th { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--grey); border-bottom-color: rgba(246,246,250,0.22); }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+tr:hover td { background: rgba(246, 246, 250, 0.04); }
 
 .rank-badge {
   display: inline-flex;
@@ -181,6 +232,7 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
   background: rgba(0,0,0,0.2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
 }
 .stat-tile .label { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--grey); line-height: 1.3; display: block; }
 .stat-tile .value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; line-height: 1.15; display: block; }
@@ -216,7 +268,7 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .gw-select:hover { border-color: rgba(0,255,133,0.4); background-color: rgba(0,255,133,0.06); }
-.gw-select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+.gw-select:focus { outline: none; border-color: rgba(0,255,133,0.5); box-shadow: 0 0 0 3px rgba(0,255,133,0.18); }
 .gw-select option { background: var(--purple-deep); color: var(--white); }
 /* Sitewide tooltip utility — add class="tip" and data-tip="..." to any
    element to get a small styled tooltip on hover, instead of relying on
@@ -289,6 +341,7 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
   width: 240px;
   background: linear-gradient(180deg, #2a0030 0%, var(--purple-deep) 100%);
   border-right: 1px solid var(--line);
+  box-shadow: 12px 0 30px -18px rgba(0, 0, 0, 0.6);
   display: flex; flex-direction: column; gap: 0.3rem;
   padding: 1.5rem 0.9rem;
   overflow-y: auto;
@@ -408,9 +461,9 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
   }
 }
 
-.card { transition: transform 0.18s ease, border-color 0.18s ease; }
+.card { transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; }
 .card--clickable { cursor: pointer; }
-.card--clickable:hover { transform: translateY(-3px); border-color: rgba(0,255,133,0.35); }
+.card--clickable:hover { transform: translateY(-3px); border-color: rgba(0,255,133,0.35); box-shadow: var(--shadow-lg); }
 
 tr { transition: background 0.15s ease; }
 
@@ -439,6 +492,7 @@ tr { transition: background 0.15s ease; }
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-lg);
 }
 .poster::before {
   content: '';
@@ -597,12 +651,15 @@ tr { transition: background 0.15s ease; }
 
 /* Section heading with a small colored accent bar */
 .section-heading {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-size: 0.95rem; color: var(--grey); margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem; font-weight: 600;
+  color: var(--white); margin-bottom: 1rem;
 }
 .section-heading::before {
   content: ''; width: 4px; height: 16px; border-radius: 2px;
   background: linear-gradient(180deg, var(--green), var(--cyan));
+  box-shadow: 0 0 10px rgba(0,255,133,0.35);
 }
 
 /* Row entrance animation for table/list rows, staggered via inline

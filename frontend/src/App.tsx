@@ -19,6 +19,9 @@ const navStyle = ({ isActive }: { isActive: boolean }) => ({
   fontFamily: 'var(--font-body)',
   fontWeight: 600,
   fontSize: '0.9rem',
+  paddingBottom: '0.3rem',
+  borderBottom: isActive ? '2px solid var(--green)' : '2px solid transparent',
+  transition: 'color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease',
 });
 
 const SUBHEADS = [

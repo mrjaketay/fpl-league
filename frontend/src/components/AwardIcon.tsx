@@ -29,7 +29,10 @@ export function IconTrophy({ size = 18 }: IconProps) {
 }
 
 // Upside-down horseshoe — the "bad luck" symbol, standing in for the
-// donkey without leaning on the literal animal.
+// donkey without leaning on the literal animal. Kept as a named export
+// in case it's wanted again later, but Donkey of the Week itself uses
+// the real emoji below — Jake asked for that one specifically to stay
+// an actual donkey rather than a vector reinterpretation.
 export function IconHorseshoe({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} {...base}>
@@ -39,6 +42,10 @@ export function IconHorseshoe({ size = 18 }: IconProps) {
       <circle cx="18" cy="16.3" r="0.5" fill="currentColor" stroke="none" />
     </svg>
   );
+}
+
+export function IconDonkeyEmoji({ size = 18 }: IconProps) {
+  return <span style={{ fontSize: size * 1.15, lineHeight: 1, display: 'inline-block' }}>🫏</span>;
 }
 
 export function IconShieldCheck({ size = 18 }: IconProps) {
@@ -278,7 +285,7 @@ export type AwardKind =
 
 const AWARD_KIND_MAP: Record<AwardKind, (p: IconProps) => JSX.Element> = {
   motw: IconTrophy,
-  dotw: IconHorseshoe,
+  dotw: IconDonkeyEmoji,
   defense: IconShieldCheck,
   midfield: IconTarget,
   attack: IconBolt,

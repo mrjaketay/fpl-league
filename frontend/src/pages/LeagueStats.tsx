@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import {
   IconCards, IconTarget, IconRocket, IconCrown, IconTrendUp, IconTrendDown,
-  IconAlertTriangle, IconTrophy, IconHorseshoe, IconShieldCheck, IconBolt,
+  IconAlertTriangle, IconTrophy, IconDonkeyEmoji, IconShieldCheck, IconBolt,
 } from '../components/AwardIcon';
 
 const CHIP_META: Record<string, { label: string; Icon: typeof IconCards }> = {
@@ -19,7 +19,7 @@ const LEADERBOARDS: { key: string; label: string; Icon: typeof IconCrown }[] = [
   { key: 'weeks_in_last', label: 'Most Weeks in Last', Icon: IconTrendDown },
   { key: 'weeks_in_bottom3', label: 'Most Weeks in Bottom 3', Icon: IconAlertTriangle },
   { key: 'motw_wins', label: 'Most Manager of the Week Wins', Icon: IconTrophy },
-  { key: 'dotw_wins', label: 'Most Donkey of the Week Wins', Icon: IconHorseshoe },
+  { key: 'dotw_wins', label: 'Most Donkey of the Week Wins', Icon: IconDonkeyEmoji },
 ];
 
 const QUARTER_CATS: { key: 'defense' | 'midfield' | 'attack'; label: string; Icon: typeof IconShieldCheck }[] = [
