@@ -259,19 +259,61 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .admin-sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
 .admin-content { display: grid; gap: 1.25rem; max-width: 900px; }
 
-/* Awards grid — compact tile cards instead of a long list of rows,
-   used for "Other Awards This Week". */
-.awards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 0.75rem;
+/* Awards list — a scoreboard-style row per award, used for "Other
+   Awards This Week". A full-width row scans left-to-right like a
+   ticker line (tag → winner → value), so rows stay flush at every
+   width instead of leaving ragged gaps the way a wrapped tile grid
+   does with uneven content lengths. The category tag is plain,
+   colour-coded text with a matching left accent bar rather than a
+   rounded pill — reserving the pill shape for the season's headline
+   Manager/Donkey of the Week cards above. */
+.awards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
 }
-.award-tile {
-  display: flex; flex-direction: column;
+.award-row {
+  --tone: var(--grey);
+  display: grid;
+  grid-template-columns: minmax(150px, 0.85fr) 1fr auto;
+  align-items: center;
+  gap: 1rem;
   background: rgba(0,0,0,0.2);
   border: 1px solid var(--line);
+  border-left: 3px solid var(--tone);
   border-radius: var(--radius-sm);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
+}
+.award-row--green { --tone: var(--green); }
+.award-row--cyan { --tone: var(--cyan); }
+.award-row--pink { --tone: var(--pink); }
+.award-row--outline { --tone: var(--grey); }
+
+.award-row__tag { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+.award-row__emoji { font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+.award-row__label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--tone);
+  line-height: 1.25;
+}
+.award-row__who { display: flex; flex-direction: column; min-width: 0; }
+.award-row__winner { font-weight: 600; overflow-wrap: break-word; }
+.award-row__manager { color: var(--grey); font-size: 0.78rem; }
+.award-row__value {
+  font-size: 1.15rem;
+  color: var(--tone);
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .award-row {
+    grid-template-columns: 1fr auto;
+  }
+  .award-row__tag { grid-column: 1 / -1; }
 }
 
 @media (max-width: 760px) {

@@ -93,17 +93,21 @@ export default function Awards() {
       {restTypes.length > 0 && (
         <div className="card fade-in fade-in-3">
           <div className="section-heading">OTHER AWARDS THIS WEEK</div>
-          <div className="awards-grid">
+          <div className="awards-list">
             {restTypes.map((type, i) => {
               const winners = awards.filter((a) => a.award_type === type);
               const meta = LABELS[type] ?? { label: type, tone: 'outline' as const, emoji: '🎖️' };
               return (
-                <div key={type} className="row-in award-tile" style={{ animationDelay: `${i * 0.05}s` }}>
-                  <span style={{ fontSize: '1.4rem' }}>{meta.emoji}</span>
-                  <span className={`pill pill--${meta.tone}`} style={{ marginTop: '0.5rem' }}>{winners.length > 1 ? `Joint ${meta.label}` : meta.label}</span>
-                  <div style={{ marginTop: '0.5rem', fontWeight: 600 }}>{winners.map((w) => w.team_name).join(' & ')}</div>
-                  <div style={{ color: 'var(--grey)', fontSize: '0.78rem' }}>{winners.map((w) => w.manager_name).join(' & ')}</div>
-                  <div className="mono" style={{ fontSize: '1.15rem', marginTop: '0.4rem', color: 'var(--white)' }}>{winners[0].value}</div>
+                <div key={type} className={`row-in award-row award-row--${meta.tone}`} style={{ animationDelay: `${i * 0.05}s` }}>
+                  <div className="award-row__tag">
+                    <span className="award-row__emoji">{meta.emoji}</span>
+                    <span className="award-row__label">{winners.length > 1 ? `Joint ${meta.label}` : meta.label}</span>
+                  </div>
+                  <div className="award-row__who">
+                    <span className="award-row__winner">{winners.map((w) => w.team_name).join(' & ')}</span>
+                    <span className="award-row__manager">{winners.map((w) => w.manager_name).join(' & ')}</span>
+                  </div>
+                  <div className="award-row__value mono">{winners[0].value}</div>
                 </div>
               );
             })}
