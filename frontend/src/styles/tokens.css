@@ -384,6 +384,30 @@ tr:hover td { background: rgba(246, 246, 250, 0.03); }
 .fade-in-2 { animation-delay: 0.12s; }
 .fade-in-3 { animation-delay: 0.19s; }
 
+/* Background art breathing — long, small-range opacity drifts so the
+   floodlights and ball feel faintly alive without ever drawing the eye
+   off content. Each piece gets its own duration so they don't move in
+   lockstep. Crowd sparkle twinkles independently, staggered per dot. */
+@keyframes bgBreathe {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+@keyframes bgTwinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.75; }
+}
+.bg-pulse-a { animation: bgBreathe 9s ease-in-out infinite; }
+.bg-pulse-b { animation: bgBreathe 11s ease-in-out infinite 1.5s; }
+.bg-pulse-c { animation: bgBreathe 13s ease-in-out infinite 0.8s; }
+.bg-pulse-d { animation: bgBreathe 15s ease-in-out infinite 2.4s; }
+.bg-sparkle { animation: bgTwinkle 4.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-pulse-a, .bg-pulse-b, .bg-pulse-c, .bg-pulse-d, .bg-sparkle {
+    animation: none;
+  }
+}
+
 .card { transition: transform 0.18s ease, border-color 0.18s ease; }
 .card--clickable { cursor: pointer; }
 .card--clickable:hover { transform: translateY(-3px); border-color: rgba(0,255,133,0.35); }
