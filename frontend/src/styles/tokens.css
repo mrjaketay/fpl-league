@@ -130,6 +130,30 @@ a { color: var(--cyan); }
   gap: 1rem;
 }
 
+/* Back-to-top button — fixed bottom-right, only shown once the page
+   has scrolled a screen's worth. Small and quiet rather than a big
+   FAB, so it doesn't compete with anything on screen. */
+.back-to-top {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  z-index: 25;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 0, 33, 0.85);
+  color: var(--white);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  animation: fadeInUp 0.25s ease both;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.back-to-top:hover { background: rgba(0,255,133,0.12); border-color: rgba(0,255,133,0.4); transform: translateY(-2px); }
+
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--line); }
 th { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--grey); }

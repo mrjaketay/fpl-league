@@ -10,6 +10,7 @@ import Admin from './pages/Admin';
 import { api } from './api/client';
 import LeagueLogo from './components/LeagueLogo';
 import BackgroundArt from './components/BackgroundArt';
+import BackToTop from './components/BackToTop';
 
 const navStyle = ({ isActive }: { isActive: boolean }) => ({
   color: isActive ? 'var(--green)' : 'var(--white)',
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
+        <BackToTop />
       </>
     );
   }
@@ -92,6 +94,7 @@ export default function App() {
           <Route path="/stats" element={<LeagueStats />} />
         </Routes>
       </div>
+      <BackToTop />
     </>
   );
 }
