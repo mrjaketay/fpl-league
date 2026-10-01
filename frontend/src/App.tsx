@@ -57,20 +57,40 @@ export default function App() {
   useEffect(() => {
     if (isAdmin) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // The height check has to happen at scroll time, not here at mount
-    // time — the page's data (standings, awards, etc.) hasn't fetched
-    // yet, so scrollHeight is still just the empty-state skeleton and
-    // this would bail out almost every time.
-    const down = setTimeout(() => {
-      if (document.documentElement.scrollHeight <= window.innerHeight + 80) return;
-      window.scrollTo({ top: 220, behavior: 'smooth' });
-    }, 900);
-    const up = setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 1800);
+
+    // A single fixed-delay check isn't reliable: the page's data
+    // (standings, awards, etc.) comes from the API, and a free-tier
+    // backend waking from sleep can take several seconds to respond —
+    // far longer than any one guessed delay. So instead this polls
+    // every 400ms, for up to ~8s, until the page has actually grown
+    // tall enough to be worth nudging, then does the nudge right then.
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    let upTimer: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20;
+
+    function check() {
+      if (cancelled) return;
+      attempts += 1;
+      if (document.documentElement.scrollHeight > window.innerHeight + 80) {
+        window.scrollTo({ top: 220, behavior: 'smooth' });
+        upTimer = setTimeout(() => {
+          if (!cancelled) window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 900);
+        return;
+      }
+      if (attempts < MAX_ATTEMPTS) {
+        pollTimer = setTimeout(check, 400);
+      }
+    }
+
+    pollTimer = setTimeout(check, 500);
+
     return () => {
-      clearTimeout(down);
-      clearTimeout(up);
+      cancelled = true;
+      if (pollTimer) clearTimeout(pollTimer);
+      if (upTimer) clearTimeout(upTimer);
     };
   }, [location.pathname, isAdmin]);
 
