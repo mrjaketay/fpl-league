@@ -124,7 +124,11 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <LeagueLogo initials={initials} size={48} />
             <div>
-              <h1 style={{ fontSize: '1.2rem', lineHeight: 1.1 }}>{leagueName || 'Loading league…'}</h1>
+              {leagueName ? (
+                <h1 style={{ fontSize: '1.2rem', lineHeight: 1.1 }}>{leagueName}</h1>
+              ) : (
+                <div className="skeleton" style={{ height: 18, width: 160, borderRadius: 4 }} />
+              )}
               <span style={{ fontSize: '0.78rem', color: 'var(--grey)' }}>{subhead}</span>
             </div>
           </div>

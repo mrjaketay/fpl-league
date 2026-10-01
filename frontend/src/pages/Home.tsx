@@ -5,6 +5,7 @@ import ManagerModal from '../components/ManagerModal';
 import AwardPoster from '../components/AwardPoster';
 import AwardIcon, { IconCrown } from '../components/AwardIcon';
 import GraffitiHOF from '../components/GraffitiHOF';
+import Skeleton from '../components/Skeleton';
 
 const WEEKLY_AWARD_META: Record<string, { title: string; icon: 'motw' | 'dotw' | 'defense' | 'midfield' | 'attack'; tone: 'green' | 'red' | 'cyan' }> = {
   manager_of_week: { title: 'Manager of the Week', icon: 'motw', tone: 'green' },
@@ -25,6 +26,12 @@ export default function Home() {
   const [quickStats, setQuickStats] = useState<any>(null);
   const [monthlyAward, setMonthlyAward] = useState<{ month: number; name: string; winners: any[] } | null>(null);
   const [selected, setSelected] = useState<any>(null);
+  // Tracks the main homeBundle fetch specifically (not the secondary
+  // price-changes/monthly-award calls) so we can tell "still loading"
+  // apart from "loaded, and there's genuinely nothing yet" — without
+  // this, a slow cold-started backend made the empty state flash up
+  // first and then get replaced, which read as the page being broken.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // One request instead of six separate ones — cuts homepage load time
@@ -39,7 +46,7 @@ export default function Home() {
       setAwards(d.awards);
       setFlyers(d.flyers);
       setQuickStats(d.quick_stats);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setLoading(false));
     api.priceChanges().then(setPrices).catch(() => {});
     api.latestMonthlyAward().then(setMonthlyAward).catch(() => {});
   }, []);
@@ -90,7 +97,48 @@ export default function Home() {
         </div>
       )}
 
-      {noDataYet && (
+      {loading && (
+        <div className="two-col-2-1 fade-in">
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div className="two-col-even">
+              <div className="card" style={{ display: 'grid', gap: '0.6rem' }}>
+                <Skeleton height={16} width="60%" />
+                <Skeleton height={34} width="45%" />
+                <Skeleton height={12} width="70%" />
+              </div>
+              <div className="card" style={{ display: 'grid', gap: '0.6rem' }}>
+                <Skeleton height={16} width="60%" />
+                <Skeleton height={34} width="45%" />
+                <Skeleton height={12} width="70%" />
+              </div>
+            </div>
+            <div className="card" style={{ display: 'grid', gap: '0.75rem' }}>
+              <Skeleton height={14} width="35%" />
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Skeleton height={30} width={30} style={{ borderRadius: '50%', flexShrink: 0 }} />
+                  <Skeleton height={14} width={`${70 - i * 12}%`} />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div className="card" style={{ display: 'grid', gap: '0.65rem' }}>
+              <Skeleton height={14} width="40%" />
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} height={14} width={`${85 - i * 8}%`} />
+              ))}
+            </div>
+            <div className="card" style={{ display: 'grid', gap: '0.65rem' }}>
+              <Skeleton height={14} width="50%" />
+              <Skeleton height={14} width="75%" />
+              <Skeleton height={14} width="60%" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && noDataYet && (
         <div className="card card--hero fade-in" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
           <h2 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>Kickoff hasn't happened yet</h2>
           <p style={{ color: 'var(--grey)', maxWidth: 420, margin: '0 auto' }}>
@@ -101,7 +149,7 @@ export default function Home() {
         </div>
       )}
 
-      {!noDataYet && (
+      {!loading && !noDataYet && (
         <div className="two-col-2-1">
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             <div className="two-col-even">
