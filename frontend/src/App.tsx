@@ -57,13 +57,17 @@ export default function App() {
   useEffect(() => {
     if (isAdmin) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (document.documentElement.scrollHeight <= window.innerHeight + 80) return;
+    // The height check has to happen at scroll time, not here at mount
+    // time — the page's data (standings, awards, etc.) hasn't fetched
+    // yet, so scrollHeight is still just the empty-state skeleton and
+    // this would bail out almost every time.
     const down = setTimeout(() => {
+      if (document.documentElement.scrollHeight <= window.innerHeight + 80) return;
       window.scrollTo({ top: 220, behavior: 'smooth' });
-    }, 650);
+    }, 900);
     const up = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 1550);
+    }, 1800);
     return () => {
       clearTimeout(down);
       clearTimeout(up);
