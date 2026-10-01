@@ -15,17 +15,19 @@
     <meta name="theme-color" content="#1c0021" />
 
     <!-- Open Graph / Twitter — so a link dropped in the group chat shows a
-         real title, description and image instead of a bare URL. Replace
-         og:url with the actual deployed domain once it's final. -->
+         real title, description and image instead of a bare URL. These are
+         static (crawlers don't run the JS that sets the live tab title), so
+         og:title is hardcoded to the actual league name rather than the
+         generic fallback — update it here if the league is ever renamed. -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Mini League HQ" />
     <meta property="og:description" content="Standings, weekly awards, head-to-head and season stats for our FPL mini-league." />
-    <meta property="og:image" content="/og-image.png" />
-    <meta property="og:url" content="/" />
+    <meta property="og:image" content="https://fpl-league-frontend.onrender.com/og-image.png" />
+    <meta property="og:url" content="https://fpl-league-frontend.onrender.com/" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Mini League HQ" />
     <meta name="twitter:description" content="Standings, weekly awards, head-to-head and season stats for our FPL mini-league." />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image" content="https://fpl-league-frontend.onrender.com/og-image.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import AwardIcon, { AwardKind } from '../components/AwardIcon';
+import Skeleton from '../components/Skeleton';
 
 type Tone = 'green' | 'red';
 
@@ -39,14 +40,17 @@ export default function Awards() {
   const [tally, setTally] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [trophyFilter, setTrophyFilter] = useState('leaders');
+  const [gwLoading, setGwLoading] = useState(true);
+  const [tallyLoading, setTallyLoading] = useState(true);
 
   useEffect(() => {
     setError(null);
-    api.gameweekAwards(gw).then(setAwards).catch((e) => setError(e.message));
+    setGwLoading(true);
+    api.gameweekAwards(gw).then(setAwards).catch((e) => setError(e.message)).finally(() => setGwLoading(false));
   }, [gw]);
 
   useEffect(() => {
-    api.seasonTally().then(setTally).catch(() => {});
+    api.seasonTally().then(setTally).catch(() => {}).finally(() => setTallyLoading(false));
   }, []);
 
   const motwList = awards.filter((a) => a.award_type === 'manager_of_week');
@@ -66,13 +70,31 @@ export default function Awards() {
       </div>
 
       {error && <p className="pill pill--pink">{error}</p>}
-      {awards.length === 0 && !error && (
+
+      {gwLoading && !error && (
+        <div className="two-col-even">
+          <div className="card card--hero fade-in" style={{ display: 'grid', gap: '0.5rem' }}>
+            <Skeleton height={20} width={140} style={{ borderRadius: 999 }} />
+            <Skeleton height={22} width="55%" />
+            <Skeleton height={14} width="35%" />
+            <Skeleton height={28} width="30%" />
+          </div>
+          <div className="card fade-in" style={{ display: 'grid', gap: '0.5rem' }}>
+            <Skeleton height={20} width={140} style={{ borderRadius: 999 }} />
+            <Skeleton height={22} width="55%" />
+            <Skeleton height={14} width="35%" />
+            <Skeleton height={28} width="30%" />
+          </div>
+        </div>
+      )}
+
+      {!gwLoading && awards.length === 0 && !error && (
         <div className="card" style={{ textAlign: 'center', color: 'var(--grey)', padding: '2rem' }}>
           No awards computed for GW{gw} yet.
         </div>
       )}
 
-      {(motwList.length > 0 || dotwList.length > 0) && (
+      {!gwLoading && (motwList.length > 0 || dotwList.length > 0) && (
         <div className="two-col-even">
           {motwList.length > 0 && (
             <div className="card card--hero fade-in fade-in-1" style={{ height: '100%' }}>
@@ -93,7 +115,7 @@ export default function Awards() {
         </div>
       )}
 
-      {restTypes.length > 0 && (
+      {!gwLoading && restTypes.length > 0 && (
         <div className="card fade-in fade-in-3">
           <div className="section-heading">OTHER AWARDS THIS WEEK</div>
           <div className="awards-list">
@@ -129,7 +151,17 @@ export default function Awards() {
           </select>
         </div>
 
-        {tally.length === 0 ? (
+        {tallyLoading ? (
+          <div className="three-col">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="stat-tile" style={{ display: 'grid', gap: '0.4rem' }}>
+                <Skeleton height={14} width="70%" />
+                <Skeleton height={18} width="50%" />
+                <Skeleton height={12} width="40%" />
+              </div>
+            ))}
+          </div>
+        ) : tally.length === 0 ? (
           <p style={{ color: 'var(--grey)' }}>No awards handed out yet this season.</p>
         ) : trophyFilter === 'leaders' ? (
           <div className="three-col">

@@ -5,6 +5,7 @@ import {
   IconCards, IconTarget, IconRocket, IconCrown, IconTrendUp, IconTrendDown,
   IconAlertTriangle, IconTrophy, IconDonkeyEmoji, IconShieldCheck, IconBolt,
 } from '../components/AwardIcon';
+import Skeleton from '../components/Skeleton';
 
 const CHIP_META: Record<string, { label: string; Icon: typeof IconCards }> = {
   wildcard: { label: 'Wildcard', Icon: IconCards },
@@ -36,19 +37,25 @@ export default function LeagueStats() {
   const [error, setError] = useState<string | null>(null);
   const [quarter, setQuarter] = useState(1);
   const [quarterBoard, setQuarterBoard] = useState<any>({ defense: [], midfield: [], attack: [] });
+  const [captainsLoading, setCaptainsLoading] = useState(true);
+  const [longevityLoading, setLongevityLoading] = useState(true);
+  const [chipsLoading, setChipsLoading] = useState(true);
+  const [quarterLoading, setQuarterLoading] = useState(true);
 
   useEffect(() => {
     setError(null);
-    api.captainStats(gw).then(setCaptains).catch((e) => setError(e.message));
+    setCaptainsLoading(true);
+    api.captainStats(gw).then(setCaptains).catch((e) => setError(e.message)).finally(() => setCaptainsLoading(false));
   }, [gw]);
 
   useEffect(() => {
-    api.chipStats().then(setChips).catch(() => {});
-    api.longevity().then(setLongevity).catch(() => {});
+    api.chipStats().then(setChips).catch(() => {}).finally(() => setChipsLoading(false));
+    api.longevity().then(setLongevity).catch(() => {}).finally(() => setLongevityLoading(false));
   }, []);
 
   useEffect(() => {
-    api.quarterlyLeaderboard(quarter).then(setQuarterBoard).catch(() => {});
+    setQuarterLoading(true);
+    api.quarterlyLeaderboard(quarter).then(setQuarterBoard).catch(() => {}).finally(() => setQuarterLoading(false));
   }, [quarter]);
 
   const totalCaptains = captains.reduce((sum, c) => sum + c.count, 0);
@@ -67,9 +74,22 @@ export default function LeagueStats() {
       <div className="card fade-in fade-in-1">
         <div className="section-heading">MOST CAPTAINED — GW{gw}</div>
         {error && <p className="pill pill--pink">{error}</p>}
-        {captains.length === 0 && !error && <p style={{ color: 'var(--grey)' }}>No captaincy data for this gameweek yet.</p>}
+        {captainsLoading && !error && (
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <Skeleton height={14} width="30%" />
+                  <Skeleton height={14} width="35%" />
+                </div>
+                <Skeleton height={8} width="100%" style={{ borderRadius: 999 }} />
+              </div>
+            ))}
+          </div>
+        )}
+        {!captainsLoading && captains.length === 0 && !error && <p style={{ color: 'var(--grey)' }}>No captaincy data for this gameweek yet.</p>}
         <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {captains.map((c) => {
+          {!captainsLoading && captains.map((c) => {
             const pct = totalCaptains ? Math.round((c.count / totalCaptains) * 100) : 0;
             return (
               <div key={c.element_id}>
@@ -104,7 +124,11 @@ export default function LeagueStats() {
             return (
               <div key={key} className="stat-tile" style={{ alignItems: 'stretch' }}>
                 <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Icon size={14} /> {label}</span>
-                {list.length === 0 ? (
+                {quarterLoading ? (
+                  <div style={{ display: 'grid', gap: '0.3rem', marginTop: '0.4rem' }}>
+                    {[0, 1, 2].map((i) => <Skeleton key={i} height={12} width={`${65 - i * 10}%`} />)}
+                  </div>
+                ) : list.length === 0 ? (
                   <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No data yet</span>
                 ) : (
                   <div style={{ display: 'grid', gap: '0.3rem', marginTop: '0.4rem' }}>
@@ -128,7 +152,14 @@ export default function LeagueStats() {
           "Weeks" here means total gameweeks spent in that spot across the season — not necessarily in a row.
         </p>
         <div className="two-col-even">
-          {LEADERBOARDS.map(({ key, label, Icon }) => {
+          {longevityLoading && LEADERBOARDS.map(({ key, label, Icon }) => (
+            <div key={key} className="stat-tile" style={{ display: 'grid', gap: '0.35rem' }}>
+              <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Icon size={14} /> {label}</span>
+              <Skeleton height={16} width="55%" />
+              <Skeleton height={12} width="30%" />
+            </div>
+          ))}
+          {!longevityLoading && LEADERBOARDS.map(({ key, label, Icon }) => {
             const sorted = [...longevity].sort((a, b) => b[key] - a[key]);
             const top = sorted[0];
             if (!top || top[key] === 0) {
@@ -152,7 +183,16 @@ export default function LeagueStats() {
 
       <div className="card fade-in fade-in-3">
         <div className="section-heading">CHIP USAGE — SEASON</div>
-        {chips.length === 0 ? (
+        {chipsLoading ? (
+          <div className="two-col-even">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="stat-tile" style={{ display: 'grid', gap: '0.35rem' }}>
+                <Skeleton height={14} width="50%" />
+                <Skeleton height={12} width="35%" />
+              </div>
+            ))}
+          </div>
+        ) : chips.length === 0 ? (
           <p style={{ color: 'var(--grey)' }}>No chips played yet this season.</p>
         ) : (
           <div className="two-col-even">

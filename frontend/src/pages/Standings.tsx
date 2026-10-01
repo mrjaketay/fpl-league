@@ -4,6 +4,7 @@ import ManagerModal from '../components/ManagerModal';
 import AwardIcon from '../components/AwardIcon';
 import GraffitiTrophy from '../components/GraffitiTrophy';
 import GameweekSelect from '../components/GameweekSelect';
+import Skeleton from '../components/Skeleton';
 
 type Row = {
   entry_id: number;
@@ -55,7 +56,11 @@ export default function Standings() {
     api.latestGameweek().then((d) => {
       setLatestGw(d.latest);
       setViewGw(d.latest);
-    }).catch(() => {});
+      // No gameweek synced yet means the second effect below (which
+      // depends on viewGw) never fires, so loading would otherwise be
+      // stuck true forever — nothing left to wait on here.
+      if (!d.latest) setLoading(false);
+    }).catch(() => setLoading(false));
     api.longevity().then(setLongevity).catch(() => {});
   }, []);
 
@@ -80,7 +85,32 @@ export default function Standings() {
     setSelected({ ...row, ...longevityRow });
   }
 
-  if (loading && rows.length === 0) return <p className="mono" style={{ color: 'var(--grey)' }}>Loading standings…</p>;
+  if (loading && rows.length === 0) {
+    return (
+      <div style={{ display: 'grid', gap: '1.25rem' }}>
+        <div className="card fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Skeleton height={14} width={150} />
+          <Skeleton height={32} width={90} />
+        </div>
+        <div className="card card--hero fade-in" style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+          <Skeleton height={58} width={58} style={{ borderRadius: '50%', flexShrink: 0 }} />
+          <div style={{ display: 'grid', gap: '0.4rem', flex: 1 }}>
+            <Skeleton height={14} width={110} />
+            <Skeleton height={22} width="40%" />
+            <Skeleton height={12} width="25%" />
+          </div>
+        </div>
+        <div className="card fade-in fade-in-1" style={{ display: 'grid', gap: '0.6rem' }}>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Skeleton height={24} width={24} style={{ borderRadius: '50%', flexShrink: 0 }} />
+              <Skeleton height={14} width={`${60 - i * 4}%`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (error) return <p className="pill pill--pink">{error}</p>;
 
   if (!latestGw) {

@@ -3,6 +3,7 @@ import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import AiFlyerModal from '../components/AiFlyerModal';
 import { IconDownload, IconSparkles } from '../components/AwardIcon';
+import Skeleton from '../components/Skeleton';
 
 export default function H2H() {
   const [gw, setGw] = useState(1);
@@ -11,14 +12,17 @@ export default function H2H() {
   const [downloading, setDownloading] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [showAiFlyer, setShowAiFlyer] = useState(false);
+  const [fixturesLoading, setFixturesLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(true);
   const fixturesCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api.h2hGameweek(gw).then(setFixtures).catch(() => setFixtures([]));
+    setFixturesLoading(true);
+    api.h2hGameweek(gw).then(setFixtures).catch(() => setFixtures([])).finally(() => setFixturesLoading(false));
   }, [gw]);
 
   useEffect(() => {
-    api.h2hTable().then(setTable).catch(() => {});
+    api.h2hTable().then(setTable).catch(() => {}).finally(() => setTableLoading(false));
   }, []);
 
   // Screenshots the fixtures card and downloads it as a PNG — good for
@@ -72,11 +76,22 @@ export default function H2H() {
             </div>
           )}
         </div>
-        {fixtures.length === 0 && (
+        {fixturesLoading && (
+          <div style={{ display: 'grid', gap: '0.6rem' }}>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', background: 'rgba(0,0,0,0.15)', borderRadius: 8, padding: '0.75rem 1rem' }}>
+                <Skeleton height={14} width="35%" />
+                <Skeleton height={14} width={30} />
+                <Skeleton height={14} width="35%" />
+              </div>
+            ))}
+          </div>
+        )}
+        {!fixturesLoading && fixtures.length === 0 && (
           <p style={{ color: 'var(--grey)' }}>No fixtures yet — generate them once from Admin.</p>
         )}
         <div style={{ display: 'grid', gap: '0.6rem' }}>
-          {fixtures.map((f, i) => {
+          {!fixturesLoading && fixtures.map((f, i) => {
             const w1 = f.winner_name === f.manager_1_name;
             const w2 = f.winner_name === f.manager_2_name;
             return (
@@ -109,7 +124,12 @@ export default function H2H() {
             </tr>
           </thead>
           <tbody>
-            {table.map((t, i) => (
+            {tableLoading && [0, 1, 2, 3, 4].map((i) => (
+              <tr key={i}>
+                <td colSpan={9}><Skeleton height={14} width={`${70 - i * 6}%`} /></td>
+              </tr>
+            ))}
+            {!tableLoading && table.map((t, i) => (
               <tr key={t.entry_id} className="row-in" style={{ animationDelay: `${i * 0.03}s` }}>
                 <td style={{ fontWeight: i === 0 ? 700 : 400, color: i === 0 ? 'var(--green)' : 'var(--white)' }}>{t.team_name}</td>
                 <td className="num">{t.played}</td>
