@@ -5,7 +5,7 @@ import { api, isLoggedIn, clearToken } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import {
   IconRefresh, IconSwords, IconUsers, IconTrophy, IconSettings, IconImage,
-  IconSave, IconLogOut, IconCrown, IconAlertTriangle,
+  IconSave, IconLogOut, IconCrown, IconAlertTriangle, IconMenu,
 } from '../components/AwardIcon';
 
 type QuarterRange = [number, number];
@@ -55,6 +55,12 @@ export default function Admin() {
   const [flyerGw, setFlyerGw] = useState(1);
   const [flyerPreviews, setFlyerPreviews] = useState<Record<string, string>>({});
   const [flyerBusy, setFlyerBusy] = useState<string | null>(null);
+  // One state covers both sidebar behaviors: on a wide screen it's an
+  // icon-only rail vs. the full labeled sidebar; on a narrow screen
+  // it's a hidden vs. open slide-in drawer. Starts closed on mobile
+  // (so a phone doesn't land on a wall of 8 nav buttons) and open on
+  // desktop, where there's room for it.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 760);
 
   useEffect(() => {
     api.flyers(flyerGw).then(setFlyerPreviews).catch(() => setFlyerPreviews({}));
@@ -149,9 +155,18 @@ export default function Admin() {
   ];
 
   return (
-    <div className="admin-page">
+    <div className={`admin-page ${sidebarCollapsed ? 'admin-page--collapsed' : ''}`}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <h1 style={{ fontSize: '1.3rem' }}>Admin Dashboard</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            className="admin-sidebar-toggle admin-sidebar-toggle--mobile"
+            aria-label={sidebarCollapsed ? 'Open menu' : 'Close menu'}
+            onClick={() => setSidebarCollapsed((c) => !c)}
+          >
+            <IconMenu size={18} />
+          </button>
+          <h1 style={{ fontSize: '1.3rem' }}>Admin Dashboard</h1>
+        </div>
         <Link to="/" style={{ fontSize: '0.85rem' }}>← Back to site</Link>
       </div>
 
@@ -174,21 +189,36 @@ export default function Admin() {
         </div>
       )}
 
+      {!sidebarCollapsed && <div className="admin-backdrop" onClick={() => setSidebarCollapsed(true)} />}
+
       <div className="admin-layout">
-        <div className="admin-sidebar">
-          <div className="admin-sidebar-brand">FPL League Admin</div>
+        <div className={`admin-sidebar ${sidebarCollapsed ? 'admin-sidebar--collapsed' : 'admin-sidebar--open'}`}>
+          <div className="admin-sidebar-head">
+            <div className="admin-sidebar-brand">FPL League Admin</div>
+            <button
+              className="admin-sidebar-toggle admin-sidebar-toggle--desktop"
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={() => setSidebarCollapsed((c) => !c)}
+            >
+              <IconMenu size={16} />
+            </button>
+          </div>
           {SECTIONS.map((s) => (
             <button
               key={s.key}
               className={`admin-sidebar-item ${section === s.key ? 'admin-sidebar-item--active' : ''}`}
-              onClick={() => setSection(s.key)}
+              title={s.label}
+              onClick={() => {
+                setSection(s.key);
+                if (window.innerWidth <= 760) setSidebarCollapsed(true);
+              }}
             >
-              <s.Icon size={16} /> {s.label}
+              <s.Icon size={16} /> <span className="admin-sidebar-item__label">{s.label}</span>
             </button>
           ))}
           <div className="admin-sidebar-divider" />
-          <button className="admin-sidebar-item" onClick={() => { clearToken(); window.location.href = '/'; }}>
-            <IconLogOut size={16} /> Log out
+          <button className="admin-sidebar-item" title="Log out" onClick={() => { clearToken(); window.location.href = '/'; }}>
+            <IconLogOut size={16} /> <span className="admin-sidebar-item__label">Log out</span>
           </button>
         </div>
 

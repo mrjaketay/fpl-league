@@ -266,6 +266,14 @@ export function IconCalendarStar({ size = 18 }: IconProps) {
   );
 }
 
+export function IconMenu({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
 export function IconDownload({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} {...base}>

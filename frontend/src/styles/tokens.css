@@ -333,6 +333,7 @@ tr:hover td { background: rgba(246, 246, 250, 0.04); }
   display: grid;
   gap: 1.25rem;
   margin-left: 240px;
+  transition: margin-left 0.2s ease;
 }
 .admin-layout { display: contents; }
 .admin-sidebar {
@@ -345,11 +346,17 @@ tr:hover td { background: rgba(246, 246, 250, 0.04); }
   display: flex; flex-direction: column; gap: 0.3rem;
   padding: 1.5rem 0.9rem;
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 20;
+  transition: width 0.2s ease, transform 0.2s ease;
+}
+.admin-sidebar-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0 0.75rem 1rem;
 }
 .admin-sidebar-brand {
   font-family: var(--font-display); font-weight: 800; font-size: 0.95rem;
-  color: var(--white); padding: 0 0.75rem 1rem;
+  color: var(--white); white-space: nowrap;
 }
 .admin-sidebar-item {
   display: flex; align-items: center; gap: 0.6rem;
@@ -357,11 +364,60 @@ tr:hover td { background: rgba(246, 246, 250, 0.04); }
   color: var(--grey); font-family: var(--font-body); font-weight: 600; font-size: 0.88rem;
   padding: 0.6rem 0.75rem; border-radius: 6px; cursor: pointer; text-align: left;
   transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
 }
 .admin-sidebar-item:hover { background: rgba(255,255,255,0.05); color: var(--white); }
 .admin-sidebar-item--active { background: rgba(0,255,133,0.1); color: var(--green); border-left-color: var(--green); }
 .admin-sidebar-divider { height: 1px; background: var(--line); margin: 0.5rem 0; }
 .admin-content { display: grid; gap: 1.25rem; max-width: 900px; }
+
+/* Collapse / drawer toggle button — same control, shown in different
+   spots depending on viewport (see the media queries below): a small
+   chevron-free icon button rather than text, so it reads as chrome
+   rather than another nav item. */
+.admin-sidebar-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; flex-shrink: 0;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--grey); cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.admin-sidebar-toggle:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+.admin-sidebar-toggle--mobile { display: none; }
+
+/* Desktop — the sidebar can be collapsed to an icon-only rail to free
+   up width, not just on mobile. */
+@media (min-width: 761px) {
+  .admin-sidebar--collapsed { width: 64px; }
+  .admin-sidebar--collapsed .admin-sidebar-brand,
+  .admin-sidebar--collapsed .admin-sidebar-item__label { display: none; }
+  .admin-sidebar--collapsed .admin-sidebar-head { justify-content: center; padding: 0 0 1rem; }
+  .admin-sidebar--collapsed .admin-sidebar-item { justify-content: center; padding: 0.6rem; }
+  .admin-page--collapsed { margin-left: 64px; }
+}
+
+/* Mobile — the sidebar becomes a slide-in overlay drawer, closed by
+   default, instead of the old horizontal strip of 8 wrapped buttons
+   (cluttered at this width). A hamburger button in the page header
+   opens it; a backdrop or picking a section closes it again. */
+@media (max-width: 760px) {
+  .admin-page { margin-left: 0; }
+  .admin-sidebar-toggle--mobile { display: flex; }
+  .admin-sidebar-toggle--desktop { display: none; }
+  .admin-sidebar {
+    width: 250px;
+    transform: translateX(-100%);
+  }
+  .admin-sidebar--open { transform: translateX(0); }
+  .admin-backdrop {
+    position: fixed; inset: 0; z-index: 19;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+}
+@media (min-width: 761px) {
+  .admin-backdrop { display: none; }
+}
 
 /* Awards list — a compact scoreboard row per award, used for "Other
    Awards This Week". Two columns on wider screens so the whole
@@ -420,10 +476,6 @@ tr:hover td { background: rgba(246, 246, 250, 0.04); }
 }
 
 @media (max-width: 760px) {
-  .admin-page { margin-left: 0; }
-  .admin-sidebar { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; height: auto; }
-  .admin-sidebar-brand { display: none; }
-  .admin-sidebar-divider { display: none; }
   .admin-content { max-width: 100%; }
 }
 
