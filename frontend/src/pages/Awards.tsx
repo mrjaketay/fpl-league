@@ -3,6 +3,8 @@ import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import AwardIcon, { AwardKind } from '../components/AwardIcon';
 import Skeleton from '../components/Skeleton';
+import QuarterFlyerModal from '../components/QuarterFlyerModal';
+import { IconSparkles } from '../components/AwardIcon';
 
 type Tone = 'green' | 'red';
 
@@ -42,6 +44,8 @@ export default function Awards() {
   const [trophyFilter, setTrophyFilter] = useState('leaders');
   const [gwLoading, setGwLoading] = useState(true);
   const [tallyLoading, setTallyLoading] = useState(true);
+  const [quarter, setQuarter] = useState(1);
+  const [showQuarterFlyer, setShowQuarterFlyer] = useState(false);
 
   useEffect(() => {
     setError(null);
@@ -141,6 +145,23 @@ export default function Awards() {
       )}
 
       <div className="card fade-in">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <div className="section-heading" style={{ marginBottom: '0.2rem' }}>QUARTERLY WINNERS</div>
+            <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>Make a flyer to post in the group chat.</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <select className="gw-select" value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
+              {[1, 2, 3, 4].map((q) => <option key={q} value={q}>Quarter {q}</option>)}
+            </select>
+            <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowQuarterFlyer(true)}>
+              <IconSparkles size={14} /> Flyer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
           <div className="section-heading" style={{ marginBottom: 0 }}>TROPHY CABINET</div>
           <select className="gw-select" value={trophyFilter} onChange={(e) => setTrophyFilter(e.target.value)}>
@@ -195,6 +216,8 @@ export default function Awards() {
           </table></div>
         )}
       </div>
+
+      {showQuarterFlyer && <QuarterFlyerModal quarter={quarter} onClose={() => setShowQuarterFlyer(false)} />}
     </div>
   );
 }

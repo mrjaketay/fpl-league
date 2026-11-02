@@ -326,12 +326,16 @@ leagueRouter.get('/h2h/gameweek/:gw', asyncHandler(async (req, res) => {
   const { rows } = await query(
     `SELECT f.*, m1.manager_name AS manager_1_name, m1.team_name AS team_1_name,
             m2.manager_name AS manager_2_name, m2.team_name AS team_2_name,
-            w.manager_name AS winner_name
+            w.manager_name AS winner_name,
+            CASE WHEN f.settled_at IS NOT NULL THEN gs1.gw_points_net END AS team_1_points,
+            CASE WHEN f.settled_at IS NOT NULL THEN gs2.gw_points_net END AS team_2_points
      FROM h2h_fixtures f
      JOIN managers m1 ON m1.entry_id = f.entry_id_1
      JOIN managers m2 ON m2.entry_id = f.entry_id_2
      LEFT JOIN managers w ON w.entry_id = f.winner_entry_id
-     WHERE gameweek = $1`,
+     LEFT JOIN gameweek_stats gs1 ON gs1.entry_id = f.entry_id_1 AND gs1.gameweek = f.gameweek
+     LEFT JOIN gameweek_stats gs2 ON gs2.entry_id = f.entry_id_2 AND gs2.gameweek = f.gameweek
+     WHERE f.gameweek = $1`,
     [req.params.gw]
   );
   res.json(rows);

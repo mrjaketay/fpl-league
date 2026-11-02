@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
-import AiFlyerModal from '../components/AiFlyerModal';
+import FlyerModal from '../components/FlyerModal';
 import { IconDownload, IconSparkles } from '../components/AwardIcon';
 import Skeleton from '../components/Skeleton';
 
@@ -11,7 +11,7 @@ export default function H2H() {
   const [table, setTable] = useState<any[]>([]);
   const [downloading, setDownloading] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [showAiFlyer, setShowAiFlyer] = useState(false);
+  const [showFlyer, setShowFlyer] = useState(false);
   const [fixturesLoading, setFixturesLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(true);
   const fixturesCardRef = useRef<HTMLDivElement>(null);
@@ -70,8 +70,8 @@ export default function H2H() {
               <button className="btn btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} disabled={downloading} onClick={downloadFixturesFlyer}>
                 {downloading ? 'Preparing…' : <><IconDownload size={14} /> Download as image</>}
               </button>
-              <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowAiFlyer(true)}>
-                <IconSparkles size={14} /> AI Flyer
+              <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowFlyer(true)}>
+                <IconSparkles size={14} /> Flyer
               </button>
             </div>
           )}
@@ -94,10 +94,20 @@ export default function H2H() {
           {!fixturesLoading && fixtures.map((f, i) => {
             const w1 = f.winner_name === f.manager_1_name;
             const w2 = f.winner_name === f.manager_2_name;
+            // points only come back for settled fixtures
+            const played = f.team_1_points != null && f.team_2_points != null;
             return (
               <div key={f.id} className={capturing ? '' : 'row-in'} style={{ animationDelay: `${i * 0.05}s`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.15)', borderRadius: 8, padding: '0.75rem 1rem' }}>
                 <span style={{ fontWeight: w1 ? 700 : 400, color: w1 ? 'var(--green)' : 'var(--white)', flex: 1 }}>{f.team_1_name}</span>
-                <span className="pill pill--outline">VS</span>
+                {played ? (
+                  <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '1.05rem', padding: '0 0.75rem' }}>
+                    <span style={{ color: w1 ? 'var(--green)' : 'var(--white)' }}>{f.team_1_points}</span>
+                    <span style={{ color: 'var(--grey)', fontWeight: 400 }}>–</span>
+                    <span style={{ color: w2 ? 'var(--green)' : 'var(--white)' }}>{f.team_2_points}</span>
+                  </span>
+                ) : (
+                  <span className="pill pill--outline">VS</span>
+                )}
                 <span style={{ fontWeight: w2 ? 700 : 400, color: w2 ? 'var(--green)' : 'var(--white)', flex: 1, textAlign: 'right' }}>{f.team_2_name}</span>
               </div>
             );
@@ -148,7 +158,7 @@ export default function H2H() {
         </table></div>
       </div>
 
-      {showAiFlyer && <AiFlyerModal gw={gw} fixtures={fixtures} onClose={() => setShowAiFlyer(false)} />}
+      {showFlyer && <FlyerModal gw={gw} fixtures={fixtures} onClose={() => setShowFlyer(false)} />}
     </div>
   );
 }

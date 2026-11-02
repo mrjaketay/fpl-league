@@ -51,6 +51,8 @@ export default function Admin() {
   const [existingFixtures, setExistingFixtures] = useState<any[]>([]);
   const [confirmingRegenerate, setConfirmingRegenerate] = useState(false);
   const [managers, setManagers] = useState<any[]>([]);
+  const [managersState, setManagersState] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [managersError, setManagersError] = useState('');
   const [suspendGw, setSuspendGw] = useState<Record<number, number>>({});
   const [flyerGw, setFlyerGw] = useState(1);
   const [flyerPreviews, setFlyerPreviews] = useState<Record<string, string>>({});
@@ -134,9 +136,16 @@ export default function Admin() {
     setQuarters((qs) => qs.map((q, i) => (i === index ? ([side === 0 ? value : q[0], side === 1 ? value : q[1]] as QuarterRange) : q)));
   }
 
+  function loadManagers() {
+    setManagersState('loading');
+    api.getManagers()
+      .then((rows) => { setManagers(rows); setManagersState('ok'); })
+      .catch((err) => { setManagersError(err.message || 'Request failed'); setManagersState('error'); });
+  }
+
   useEffect(() => {
     if (!isLoggedIn() || section !== 'teams') return;
-    api.getManagers().then(setManagers).catch(() => {});
+    loadManagers();
   }, [section]);
 
   useEffect(() => {
@@ -330,7 +339,15 @@ export default function Admin() {
                 gameweek onward, but stays fully visible for every gameweek before it. Clear the field and save
                 to reinstate them.
               </p>
-              <div style={{ display: 'grid', gap: '0.6rem' }}>
+              {managersState === 'loading' && <div className="skeleton" style={{ height: 120, borderRadius: 8 }} />}
+              {managersState === 'error' && (
+                <div style={{ display: 'grid', gap: '0.6rem', justifyItems: 'start' }}>
+                  <span style={{ color: 'var(--pink)' }}>Couldn't load teams: {managersError}</span>
+                  <span style={{ color: 'var(--grey)', fontSize: '0.8rem' }}>If it says unauthorized or invalid token, log out and back in.</span>
+                  <button className="btn btn--ghost" onClick={loadManagers}>Retry</button>
+                </div>
+              )}
+              {managersState === 'ok' && <div style={{ display: 'grid', gap: '0.6rem' }}>
                 {managers.map((m) => (
                   <div key={m.entry_id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', borderBottom: '1px solid var(--line)', paddingBottom: '0.6rem' }}>
                     <span style={{ flex: 1, minWidth: 160 }}>
@@ -361,8 +378,8 @@ export default function Admin() {
                     </button>
                   </div>
                 ))}
-                {managers.length === 0 && <span style={{ color: 'var(--grey)' }}>No managers synced yet.</span>}
-              </div>
+                {managers.length === 0 && <span style={{ color: 'var(--grey)' }}>No managers synced yet — run Sync Data first.</span>}
+              </div>}
             </div>
           )}
 
