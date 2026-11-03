@@ -30,7 +30,20 @@ type Award = {
   team_name: string;
   value: number;
   details: any;
+  transfers_cost?: number | null;
+  gw_points_raw?: number | null;
 };
+
+// "after a -4 hit" note for weekly awards, so everyone can see the cost
+function hitNote(list: Award[]) {
+  const hit = list.filter((a) => a.transfers_cost);
+  if (hit.length === 0) return null;
+  return (
+    <div style={{ color: 'var(--grey)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+      {hit.map((a) => `${a.team_name}: ${a.gw_points_raw} before a -${a.transfers_cost} hit`).join(' · ')}
+    </div>
+  );
+}
 
 function namesList(list: Award[]) {
   return list.map((a) => a.team_name).join(' & ');
@@ -46,6 +59,7 @@ export default function Awards() {
   const [tallyLoading, setTallyLoading] = useState(true);
   const [quarter, setQuarter] = useState(1);
   const [showQuarterFlyer, setShowQuarterFlyer] = useState(false);
+  const [quarterWinners, setQuarterWinners] = useState<Award[] | null>(null);
 
   useEffect(() => {
     setError(null);
@@ -56,6 +70,11 @@ export default function Awards() {
   useEffect(() => {
     api.seasonTally().then(setTally).catch(() => {}).finally(() => setTallyLoading(false));
   }, []);
+
+  useEffect(() => {
+    setQuarterWinners(null);
+    api.quarterlyAwards(quarter).then(setQuarterWinners).catch(() => setQuarterWinners([]));
+  }, [quarter]);
 
   const motwList = awards.filter((a) => a.award_type === 'manager_of_week');
   const dotwList = awards.filter((a) => a.award_type === 'donkey_of_week');
@@ -106,6 +125,7 @@ export default function Awards() {
               <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{namesList(motwList)}</h3>
               <span style={{ color: 'var(--grey)' }}>{motwList.map((a) => a.manager_name).join(' & ')}</span>
               <div className="mono" style={{ fontSize: '1.8rem', color: 'var(--green)', marginTop: '0.5rem' }}>{motwList[0].value} pts</div>
+              {hitNote(motwList)}
             </div>
           )}
           {dotwList.length > 0 && (
@@ -114,6 +134,7 @@ export default function Awards() {
               <h3 style={{ fontSize: '1.2rem', marginTop: '0.6rem' }}>{namesList(dotwList)}</h3>
               <span style={{ color: 'var(--grey)' }}>{dotwList.map((a) => a.manager_name).join(' & ')}</span>
               <div className="mono" style={{ fontSize: '1.8rem', color: 'var(--red)', marginTop: '0.5rem' }}>{dotwList[0].value} pts</div>
+              {hitNote(dotwList)}
             </div>
           )}
         </div>
@@ -145,11 +166,8 @@ export default function Awards() {
       )}
 
       <div className="card fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div>
-            <div className="section-heading" style={{ marginBottom: '0.2rem' }}>QUARTERLY WINNERS</div>
-            <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>Make a flyer to post in the group chat.</span>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div className="section-heading" style={{ marginBottom: 0 }}>QUARTERLY WINNERS</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <select className="gw-select" value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
               {[1, 2, 3, 4].map((q) => <option key={q} value={q}>Quarter {q}</option>)}
@@ -159,6 +177,44 @@ export default function Awards() {
             </button>
           </div>
         </div>
+
+        {quarterWinners === null ? (
+          <div className="three-col">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="stat-tile" style={{ display: 'grid', gap: '0.4rem' }}>
+                <Skeleton height={14} width="70%" />
+                <Skeleton height={18} width="50%" />
+                <Skeleton height={12} width="40%" />
+              </div>
+            ))}
+          </div>
+        ) : quarterWinners.length === 0 ? (
+          <p style={{ color: 'var(--grey)' }}>Quarter {quarter} hasn't been locked in yet. It locks automatically once its last gameweek is over.</p>
+        ) : (
+          <div className="three-col">
+            {[
+              { type: 'quarterly_defense', label: 'Best Defence', kind: 'defense' as AwardKind },
+              { type: 'quarterly_midfield', label: 'Best Midfield', kind: 'midfield' as AwardKind },
+              { type: 'quarterly_attack', label: 'Best Attack', kind: 'attack' as AwardKind },
+            ].map((c, i) => {
+              const list = quarterWinners.filter((w) => w.award_type === c.type);
+              return (
+                <div key={c.type} className="stat-tile row-in" style={{ animationDelay: `${i * 0.04}s` }}>
+                  <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <AwardIcon kind={c.kind} size={15} /> {list.length > 1 ? `Joint ${c.label}` : c.label}
+                  </span>
+                  <span className="value" style={{ fontSize: '1.05rem' }}>{list.length ? namesList(list) : '—'}</span>
+                  {list.length > 0 && (
+                    <>
+                      <span style={{ color: 'var(--grey)', fontSize: '0.8rem' }}>{list.map((w) => w.manager_name).join(' & ')}</span>
+                      <span className="mono" style={{ color: 'var(--green)', fontSize: '0.85rem' }}>{list[0].value} pts</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="card fade-in">

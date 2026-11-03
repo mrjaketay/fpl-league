@@ -50,6 +50,7 @@ export const api = {
 
   syncGameweek: (gw: number) => request(`/api/admin/sync/${gw}`, { method: 'POST' }),
   syncCurrent: () => request('/api/admin/sync/current', { method: 'POST' }),
+  resyncAll: () => request('/api/admin/resync-all', { method: 'POST' }),
   recomputeQuarterly: (quarter: number) =>
     request(`/api/admin/awards/quarterly/${quarter}`, { method: 'POST' }),
   generateH2H: (startGameweek: number, totalGameweeks: number) =>

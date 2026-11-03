@@ -52,6 +52,26 @@ adminRouter.post('/sync/:gw', asyncHandler(async (req, res) => {
   res.json({ syncResult, awardsResult, h2hResult });
 }));
 
+// One-off: re-sync every gameweek so far (after a calculation fix), then
+// redo the weekly awards and H2H results.
+adminRouter.post('/resync-all', asyncHandler(async (_req, res) => {
+  const bootstrap = await fetchBootstrap({ forceRefresh: true });
+  const current = currentEventId(bootstrap);
+  if (!current) return res.status(400).json({ error: 'Could not determine current gameweek' });
+
+  const settings = await query('SELECT value FROM league_settings WHERE key = $1', ['fpl_league_id']);
+  const leagueId = settings.rows[0].value;
+
+  const done = [];
+  for (let gw = 1; gw <= current; gw++) {
+    const syncResult = await syncGameweek(leagueId, gw);
+    await recomputeGameweekAwards(gw);
+    await settleH2H(gw);
+    done.push({ gw, managersSynced: syncResult.managersSynced });
+  }
+  res.json({ resynced: done.length, through: current, done });
+}));
+
 adminRouter.post('/awards/quarterly/:quarter', asyncHandler(async (req, res) => {
   const result = await recomputeQuarterlyAwards(Number(req.params.quarter));
   res.json(result);

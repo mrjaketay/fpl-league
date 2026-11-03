@@ -13,6 +13,8 @@ type Row = {
   total_points_after: number;
   last_gameweek: number;
   gw_points: number;
+  transfers_cost: number | null;
+  gw_points_raw: number | null;
   rank_change: number | null;
 };
 
@@ -28,6 +30,17 @@ const AWARD_ICON_MAP: Record<string, { kind: 'motw' | 'dotw' | 'defense' | 'midf
   midfield_king: { kind: 'midfield', title: 'Best Midfield' },
   attack_king: { kind: 'attack', title: 'Best Attack' },
 };
+
+// small red tag for teams that took a transfer hit that week
+function HitTag({ cost, raw }: { cost?: number | null; raw?: number | null }) {
+  if (!cost) return null;
+  return (
+    <span className="pill pill--red tip" style={{ marginLeft: '0.4rem', fontSize: '0.7rem' }}
+      data-tip={`Took a -${cost} transfer hit${raw != null ? ` (${raw} before the hit)` : ''}`}>
+      -{cost}
+    </span>
+  );
+}
 
 function RankBadge({ rank }: { rank: number }) {
   const cls = rank === 1 ? 'rank-badge--gold' : rank === 2 ? 'rank-badge--silver' : rank === 3 ? 'rank-badge--bronze' : 'rank-badge--plain';
@@ -155,7 +168,7 @@ export default function Standings() {
             </div>
             <div className="stat-tile">
               <span className="label">GW{leader.last_gameweek} Points</span>
-              <span className="value">{leader.gw_points}</span>
+              <span className="value">{leader.gw_points}<HitTag cost={leader.transfers_cost} raw={leader.gw_points_raw} /></span>
             </div>
           </div>
         </div>
@@ -213,7 +226,7 @@ export default function Standings() {
                     </div>
                   </td>
                   <td style={{ color: 'var(--grey)' }}>{r.manager_name}</td>
-                  <td className="num">{r.gw_points}</td>
+                  <td className="num">{r.gw_points}<HitTag cost={r.transfers_cost} raw={r.gw_points_raw} /></td>
                   <td className="num" style={{ color: 'var(--green)', fontWeight: 700 }}>{r.total_points_after}</td>
                 </tr>
               ))}

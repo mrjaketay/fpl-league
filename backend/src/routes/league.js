@@ -18,7 +18,8 @@ leagueRouter.get('/standings', asyncHandler(async (req, res) => {
 
   const { rows } = await query(
     `SELECT m.entry_id, m.manager_name, m.team_name,
-            gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points
+            gs.total_points_after, gs.gameweek AS last_gameweek, gs.gw_points_net AS gw_points,
+            gs.transfers_cost, gs.gw_points_raw AS gw_points_raw
      FROM gameweek_stats gs
      JOIN managers m ON m.entry_id = gs.entry_id
      WHERE gs.gameweek = $1 AND (m.suspended_from_gameweek IS NULL OR $1 < m.suspended_from_gameweek)`,
@@ -81,9 +82,11 @@ leagueRouter.get('/gameweek/:gw', asyncHandler(async (req, res) => {
 // Awards for a specific gameweek (Manager of the Week, Donkey of the Week, etc.)
 leagueRouter.get('/awards/gameweek/:gw', asyncHandler(async (req, res) => {
   const { rows } = await query(
-    `SELECT a.*, m.manager_name, m.team_name
+    `SELECT a.*, m.manager_name, m.team_name,
+            gs.transfers_cost, gs.gw_points_raw
      FROM awards a JOIN managers m ON m.entry_id = a.entry_id
-     WHERE gameweek = $1 ORDER BY award_type`,
+     LEFT JOIN gameweek_stats gs ON gs.entry_id = a.entry_id AND gs.gameweek = a.gameweek
+     WHERE a.gameweek = $1 ORDER BY a.award_type`,
     [req.params.gw]
   );
   res.json(rows);

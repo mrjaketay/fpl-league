@@ -4,6 +4,8 @@ import {
   fetchLeagueStandings,
   fetchEntryPicks,
   fetchEventLive,
+  fetchEntryHistory,
+  currentEventId,
   positionOf,
 } from './fplApi.js';
 
@@ -51,14 +53,34 @@ async function storeLeagueName(leagueInfo) {
 
 // Sums each starting-XI player's contribution (points * multiplier) into
 // GK+DEF / MID / FWD buckets, using the live gameweek data for actual points.
-function computePositionSums(picks, liveElements, bootstrap) {
+// Picks only show the XI as it was picked, so auto-subs and a vice-captain
+// taking over get applied here to match what the FPL site counts.
+function computePositionSums(picks, liveElements, bootstrap, autoSubs = []) {
   const sums = { gk_def: 0, mid: 0, fwd: 0 };
-  const liveById = new Map(liveElements.map((e) => [e.id, e.stats.total_points]));
+  const liveById = new Map(liveElements.map((e) => [e.id, e.stats]));
+  const pointsOf = (id) => liveById.get(id)?.total_points || 0;
+  const minutesOf = (id) => liveById.get(id)?.minutes || 0;
 
-  for (const pick of picks) {
-    if (pick.multiplier <= 0) continue; // benched, didn't play
-    const pos = positionOf(pick.element, bootstrap); // 1 GK, 2 DEF, 3 MID, 4 FWD
-    const pts = (liveById.get(pick.element) || 0) * pick.multiplier;
+  const mult = new Map(picks.map((p) => [p.element, p.multiplier]));
+
+  // auto-subs: the player who came off scores nothing, the one who came on counts once
+  for (const sub of autoSubs) {
+    mult.set(sub.element_out, 0);
+    mult.set(sub.element_in, 1);
+  }
+
+  // captain didn't play but vice did: vice gets the captain's multiplier
+  const cap = picks.find((p) => p.is_captain);
+  const vice = picks.find((p) => p.is_vice_captain);
+  if (cap && vice && minutesOf(cap.element) === 0 && minutesOf(vice.element) > 0 && (mult.get(cap.element) || 0) > 0) {
+    mult.set(vice.element, mult.get(cap.element));
+    mult.set(cap.element, 1);
+  }
+
+  for (const [element, m] of mult) {
+    if (m <= 0) continue; // benched, didn't play
+    const pos = positionOf(element, bootstrap); // 1 GK, 2 DEF, 3 MID, 4 FWD
+    const pts = pointsOf(element) * m;
     if (pos === 1 || pos === 2) sums.gk_def += pts;
     else if (pos === 3) sums.mid += pts;
     else if (pos === 4) sums.fwd += pts;
@@ -75,8 +97,10 @@ export async function syncGameweek(leagueId, gameweek) {
   await storeLeagueName(league);
 
   const live = await fetchEventLive(gameweek);
+  const isCurrent = currentEventId(bootstrap) === gameweek;
 
   let synced = 0;
+  const mismatches = [];
   for (const manager of results) {
     try {
       const picksData = await fetchEntryPicks(manager.entry, gameweek);
@@ -88,10 +112,32 @@ export async function syncGameweek(leagueId, gameweek) {
       const liveById = new Map(live.elements.map((e) => [e.id, e.stats.total_points]));
       const captainPoints = captainPick ? liveById.get(captainPick.element) ?? null : null;
 
-      const posSums = computePositionSums(picksData.picks, live.elements, bootstrap);
+      const posSums = computePositionSums(picksData.picks, live.elements, bootstrap, picksData.automatic_subs);
 
-      const netPoints = hist.points;
-      const rawPoints = hist.points + hist.event_transfers_cost;
+      // The gameweek score after any transfer hit = this week's running
+      // total minus last week's. Worked out from the totals so it can't
+      // depend on whether the "points" field already has the hit taken off.
+      let prevTotal = null;
+      try {
+        const history = await fetchEntryHistory(manager.entry);
+        const prev = history.current.find((e) => e.event === gameweek - 1);
+        if (prev) prevTotal = prev.total_points;
+      } catch {}
+      if (prevTotal == null && gameweek === 1) prevTotal = 0;
+      if (prevTotal == null) {
+        const { rows: prevRows } = await query(
+          'SELECT total_points_after FROM gameweek_stats WHERE entry_id = $1 AND gameweek = $2',
+          [manager.entry, gameweek - 1]
+        );
+        prevTotal = prevRows[0]?.total_points_after ?? null;
+      }
+      const netPoints = prevTotal != null ? hist.total_points - prevTotal : hist.points - hist.event_transfers_cost;
+      const rawPoints = netPoints + hist.event_transfers_cost;
+
+      // for the current gameweek, FPL's own league table total should match ours
+      if (isCurrent && manager.total != null && manager.total !== hist.total_points) {
+        mismatches.push({ entry: manager.entry, ours: hist.total_points, league_table: manager.total });
+      }
 
       await query(
         `INSERT INTO gameweek_stats (
@@ -128,5 +174,5 @@ export async function syncGameweek(leagueId, gameweek) {
       console.error(`Failed syncing entry ${manager.entry} GW${gameweek}:`, err.message);
     }
   }
-  return { gameweek, managersSynced: synced };
+  return { gameweek, managersSynced: synced, mismatches };
 }

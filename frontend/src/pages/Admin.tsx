@@ -245,6 +245,13 @@ export default function Admin() {
                 <GameweekSelect value={gw} onChange={setGw} />
                 <button className="btn btn--ghost" onClick={() => run(`Sync GW${gw}`, () => api.syncGameweek(gw))}>Sync This GW</button>
               </div>
+              <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--line)' }}>
+                <p style={{ color: 'var(--grey)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                  Re-pulls every gameweek so far and redoes the weekly awards and H2H results. Use it once after a
+                  calculation fix. It can take a minute or two.
+                </p>
+                <button className="btn btn--ghost" onClick={() => run('Re-sync all gameweeks', api.resyncAll)}>Re-sync All Gameweeks</button>
+              </div>
             </div>
           )}
 
