@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, isLoggedIn } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import FlyerModal from '../components/FlyerModal';
+import H2HTableFlyerModal from '../components/H2HTableFlyerModal';
 import { IconDownload, IconSparkles } from '../components/AwardIcon';
 import Skeleton from '../components/Skeleton';
 
@@ -12,6 +13,7 @@ export default function H2H() {
   const [downloading, setDownloading] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [showFlyer, setShowFlyer] = useState(false);
+  const [showTableFlyer, setShowTableFlyer] = useState(false);
   const [fixturesLoading, setFixturesLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(true);
   const fixturesCardRef = useRef<HTMLDivElement>(null);
@@ -116,8 +118,15 @@ export default function H2H() {
       </div>
 
       <div className="card fade-in fade-in-1">
-        <div className="section-heading" data-tip="Standard 3 points for a win, 1 for a draw, sorted by League Points then Diff">
-          SEASON H2H LEAGUE TABLE
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div className="section-heading" style={{ marginBottom: 0 }} data-tip="Standard 3 points for a win, 1 for a draw, sorted by League Points then Diff">
+            SEASON H2H LEAGUE TABLE
+          </div>
+          {table.length > 0 && isLoggedIn() && (
+            <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowTableFlyer(true)}>
+              <IconSparkles size={14} /> Flyer
+            </button>
+          )}
         </div>
         <div className="table-scroll"><table>
           <thead>
@@ -158,6 +167,7 @@ export default function H2H() {
         </table></div>
       </div>
 
+      {showTableFlyer && <H2HTableFlyerModal table={table} onClose={() => setShowTableFlyer(false)} />}
       {showFlyer && <FlyerModal gw={gw} fixtures={fixtures} onClose={() => setShowFlyer(false)} />}
     </div>
   );
