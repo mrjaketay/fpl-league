@@ -5,6 +5,7 @@ import Standings from './pages/Standings';
 import Awards from './pages/Awards';
 import H2H from './pages/H2H';
 import LeagueStats from './pages/LeagueStats';
+import Guide from './pages/Guide';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
 import { api, startSessionWatch } from './api/client';
@@ -142,6 +143,7 @@ export default function App() {
             <NavLink to="/awards" style={navStyle}>Awards</NavLink>
             <NavLink to="/h2h" style={navStyle}>H2H</NavLink>
             <NavLink to="/stats" style={navStyle}>League Stats</NavLink>
+            <NavLink to="/guide" style={navStyle}>Guide</NavLink>
             <NavLink to="/admin" style={navStyle}>Admin</NavLink>
           </nav>
         </div>
@@ -154,6 +156,7 @@ export default function App() {
           <Route path="/awards" element={<Awards />} />
           <Route path="/h2h" element={<H2H />} />
           <Route path="/stats" element={<LeagueStats />} />
+          <Route path="/guide" element={<Guide />} />
         </Routes>
       </div>
       <BackToTop />

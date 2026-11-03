@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Our League Rankings Work</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* layout: one narrow column, tab bar on top, each tab = a short rule + something to click */
+:root {
+  --bg: #1c0021; --panel: #2a0731; --panel-2: #36103e; --line: rgba(255,255,255,.12);
+  --fg: #f6f6fa; --muted: #b3aec4; --green: #00ff85; --cyan: #04f5ff; --pink: #ff2882; --on-green: #1c0021;
+  --display: 'Poppins', system-ui, sans-serif; --body: 'Inter', system-ui, sans-serif; --mono: 'Space Mono', ui-monospace, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f2f9; --panel: #ffffff; --panel-2: #efe8f5; --line: rgba(28,0,33,.14);
+    --fg: #1c0021; --muted: #5d5470; --green: #00935a; --cyan: #00727c; --pink: #cf1259; --on-green: #ffffff; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f6f2f9; --panel: #ffffff; --panel-2: #efe8f5; --line: rgba(28,0,33,.14);
+  --fg: #1c0021; --muted: #5d5470; --green: #00935a; --cyan: #00727c; --pink: #cf1259; --on-green: #ffffff; color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 760px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; line-height: 1.15; }
+h1 { font-size: clamp(1.7rem, 6vw, 2.4rem); font-weight: 800; letter-spacing: -.02em; }
+h2 { font-size: 1.3rem; font-weight: 700; }
+h3 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--green); }
+.lede { color: var(--muted); max-width: 60ch; }
+.tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.tab { flex: 0 0 auto; font: 600 .9rem var(--body); color: var(--muted); background: transparent; border: 1px solid var(--line);
+  border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--green); color: var(--on-green); border-color: var(--green); }
+.tab:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 18px; }
+.rule { display: grid; gap: 8px; }
+.rule p { color: var(--muted); max-width: 62ch; }
+.rule b { color: var(--fg); }
+.demo { background: var(--panel-2); border-radius: 12px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.demo-label { font-family: var(--mono); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.note { font-size: .82rem; color: var(--muted); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.stack { display: grid; gap: 6px; min-width: 0; }
+input[type=range] { width: 100%; accent-color: var(--green); }
+.big { font-family: var(--display); font-weight: 800; font-size: 2.2rem; line-height: 1; }
+.pill { display: inline-block; font-family: var(--mono); font-size: .72rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); }
+.pill.hit { background: var(--pink); color: #fff; border-color: var(--pink); }
+.pill.win { background: var(--green); color: var(--on-green); border-color: var(--green); }
+.pill.draw { color: var(--cyan); border-color: var(--cyan); }
+.pill.lose { color: var(--pink); border-color: var(--pink); }
+.switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.switch button { background: transparent; border: 0; color: var(--muted); font: 600 .85rem var(--body); padding: 8px 14px; cursor: pointer; }
+.switch button[aria-pressed="true"] { background: var(--cyan); color: var(--on-green); }
+.list { display: grid; gap: 6px; }
+.item { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 9px;
+  background: var(--panel); border: 1px solid var(--line); transition: transform .25s ease, border-color .25s ease; }
+.item.top { border-color: var(--green); }
+.item.bottom { border-color: var(--pink); }
+.item .pos { font-family: var(--mono); color: var(--muted); font-size: .85rem; }
+.item .name { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.item .val { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.tag { font-family: var(--mono); font-size: .66rem; letter-spacing: .08em; margin-left: 8px; padding: 2px 7px; border-radius: 999px; }
+.tag.g { background: var(--green); color: var(--on-green); } .tag.p { background: var(--pink); color: #fff; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.card-btn { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--fg); padding: 11px 12px; cursor: pointer; font: 600 .86rem var(--body); }
+.card-btn[aria-pressed="true"] { border-color: var(--cyan); background: var(--panel-2); }
+.explain { border-left: 3px solid var(--cyan); padding: 4px 0 4px 14px; color: var(--muted); }
+.explain b { color: var(--fg); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th { text-align: right; font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; color: var(--muted); font-weight: 400; padding: 6px 8px; }
+td { padding: 9px 8px; border-top: 1px solid var(--line); text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; font-family: var(--body); }
+tr.lead td:first-child { color: var(--green); font-weight: 700; }
+.scroll { overflow-x: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { background: var(--panel); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; cursor: pointer; font: 600 .84rem var(--body); }
+.chip[aria-pressed="true"] { background: var(--green); color: var(--on-green); border-color: var(--green); }
+svg text { font-family: var(--mono); }
+.zone { cursor: pointer; transition: opacity .2s; }
+.faq details { border-top: 1px solid var(--line); padding: 12px 0; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq p { color: var(--muted); margin-top: 8px; }
+.footer { text-align: center; }
+html.embed { color-scheme: normal !important; }
+html.embed body { background: transparent; padding-block: 0 8px; }
+html.embed header.rule { display: none; }
+@media (prefers-reduced-motion: reduce) { .item { transition: none; } }
+@media (max-width: 480px) { .panel { padding: 16px; } .demo { padding: 14px; } }
+</style>
+
+<main>
+  <header class="rule">
+    <span class="eyebrow">League guide</span>
+    <h1>How our rankings work</h1>
+    <p class="lede">Standings, weekly awards, head-to-head and the monthly and quarterly prizes each use a different rule. Pick a topic and try the examples. All the names and numbers in the examples are made up.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Topics">
+    <button class="tab" role="tab" id="t-standings" aria-selected="true" data-tab="standings">Standings</button>
+    <button class="tab" role="tab" id="t-weekly" aria-selected="false" data-tab="weekly">Weekly awards</button>
+    <button class="tab" role="tab" id="t-h2h" aria-selected="false" data-tab="h2h">Head-to-head</button>
+    <button class="tab" role="tab" id="t-long" aria-selected="false" data-tab="long">Month &amp; quarter</button>
+  </nav>
+
+  <!-- STANDINGS -->
+  <section class="panel" id="p-standings" role="tabpanel" aria-labelledby="t-standings">
+    <div class="rule">
+      <h2>The main table</h2>
+      <p>The table is ordered by <b>total FPL points</b>, the same total you see in the FPL app. The <b>GW Pts</b> column is your score for the latest gameweek.</p>
+      <p>If you made extra transfers, FPL takes <b>4 points off for each one</b>. That hit is already inside your total, and it is already taken off your GW score. A red tag next to a score shows the hit that was taken.</p>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Try it: how a hit changes your week</span>
+      <div class="stack">
+        <label for="raw">Points your players scored: <b class="mono" id="rawOut">62</b></label>
+        <input type="range" id="raw" min="20" max="120" value="62">
+      </div>
+      <div class="stack">
+        <label for="hit">Hit taken: <b class="mono" id="hitOut">-4</b></label>
+        <input type="range" id="hit" min="0" max="16" step="4" value="4">
+      </div>
+      <div class="row">
+        <div><div class="demo-label">Counts in the table</div><div class="big mono" id="netOut" style="color:var(--green)">58</div></div>
+        <span class="pill hit" id="hitTag">-4 hit</span>
+      </div>
+      <p class="note">A hit only pays off if the transfer scores you more than the points it costs.</p>
+    </div>
+  </section>
+
+  <!-- WEEKLY -->
+  <section class="panel" id="p-weekly" role="tabpanel" aria-labelledby="t-weekly" hidden>
+    <div class="rule">
+      <h2>Awards handed out every gameweek</h2>
+      <p><b>Manager of the Week</b> is the highest score after hits. <b>Donkey of the Week</b> is the lowest score after hits. If two teams tie, they share the award.</p>
+      <p>That is why a team can score the most raw points and still miss out. The hit counts against it.</p>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Try it: switch hits on and off</span>
+      <div class="switch" role="group" aria-label="Count hits">
+        <button type="button" id="hitsOn" aria-pressed="true">League rule: hits count</button>
+        <button type="button" id="hitsOff" aria-pressed="false">Ignore hits</button>
+      </div>
+      <div class="list" id="weekList"></div>
+      <p class="note" id="weekNote"></p>
+    </div>
+    <div class="rule">
+      <h3>The other weekly awards (tap one)</h3>
+      <div class="cards" id="awardCards"></div>
+      <p class="explain" id="awardExplain"></p>
+    </div>
+  </section>
+
+  <!-- H2H -->
+  <section class="panel" id="p-h2h" role="tabpanel" aria-labelledby="t-h2h" hidden>
+    <div class="rule">
+      <h2>Head-to-head</h2>
+      <p>Each gameweek you play one team in the league. The higher FPL score wins. <b>Hits do not count here.</b> Both teams are compared on the points they scored before any deduction.</p>
+      <p>A win is <b>3 points</b>, a draw is <b>1</b> and a loss is <b>0</b>.</p>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Try it: play a match</span>
+      <div class="stack"><label for="sa">Team A scored: <b class="mono" id="saOut">58</b></label><input type="range" id="sa" min="20" max="110" value="58"></div>
+      <div class="stack"><label for="sb">Team B scored: <b class="mono" id="sbOut">51</b></label><input type="range" id="sb" min="20" max="110" value="51"></div>
+      <div class="row"><span class="pill win" id="resA">Team A  +3</span><span class="pill lose" id="resB">Team B  +0</span></div>
+    </div>
+    <div class="rule">
+      <h3>How the H2H table is ordered</h3>
+      <p>First by <b>H2H points</b>. If teams are level, the better <b>difference</b> goes higher. Difference is all the FPL points a team scored in its matches minus all the points scored against it.</p>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Example table: three teams level on points</span>
+      <div class="scroll"><table>
+        <thead><tr><th>Team</th><th>W</th><th>D</th><th>L</th><th>For</th><th>Against</th><th>Diff</th><th>Pts</th></tr></thead>
+        <tbody>
+          <tr class="lead"><td>Team Alpha</td><td>3</td><td>0</td><td>1</td><td>248</td><td>201</td><td style="color:var(--green)">+47</td><td><b>9</b></td></tr>
+          <tr><td>Team Bravo</td><td>3</td><td>0</td><td>1</td><td>231</td><td>212</td><td style="color:var(--green)">+19</td><td><b>9</b></td></tr>
+          <tr><td>Team Charlie</td><td>3</td><td>0</td><td>1</td><td>219</td><td>224</td><td style="color:var(--pink)">-5</td><td><b>9</b></td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">All three have 9 points, so the difference decides the order.</p>
+    </div>
+  </section>
+
+  <!-- LONG -->
+  <section class="panel" id="p-long" role="tabpanel" aria-labelledby="t-long" hidden>
+    <div class="rule">
+      <h2>Manager of the Month</h2>
+      <p>Add up each team's score after hits across every gameweek in the month. The highest total wins. The award is handed out automatically once the month's last gameweek is over and FPL has confirmed its bonus points.</p>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Tap a month to see its gameweeks</span>
+      <div class="chips" id="monthChips"></div>
+      <p class="explain" id="monthExplain"></p>
+    </div>
+
+    <div class="rule">
+      <h2>Quarterly awards</h2>
+      <p>The season is split into four quarters. In each one, three awards go to the teams whose players earned the most points in one part of the pitch. Only players in your starting XI count, including captain bonuses and auto-subs.</p>
+    </div>
+    <div class="demo">
+      <span class="demo-label">Tap a part of the pitch</span>
+      <svg viewBox="0 0 320 210" width="100%" role="img" aria-label="Pitch split into defence and goalkeeper, midfield and attack" style="max-width:420px">
+        <rect x="2" y="2" width="316" height="206" rx="10" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <g class="zone" id="zAtt" data-z="attack"><rect x="6" y="6" width="308" height="64" rx="6" fill="var(--pink)" opacity=".28"/><text x="160" y="44" text-anchor="middle" fill="var(--fg)" font-size="13">ATTACK</text></g>
+        <g class="zone" id="zMid" data-z="midfield"><rect x="6" y="73" width="308" height="64" rx="6" fill="var(--green)" opacity=".28"/><text x="160" y="111" text-anchor="middle" fill="var(--fg)" font-size="13">MIDFIELD</text></g>
+        <g class="zone" id="zDef" data-z="defence"><rect x="6" y="140" width="308" height="64" rx="6" fill="var(--cyan)" opacity=".28"/><text x="160" y="178" text-anchor="middle" fill="var(--fg)" font-size="13">DEFENCE + GOALKEEPER</text></g>
+      </svg>
+      <p class="explain" id="zoneExplain">Tap a zone to see which award it decides.</p>
+      <div class="chips" id="quarterChips"></div>
+      <p class="note" id="quarterNote"></p>
+    </div>
+    <p class="note">Quarterly winners are locked in automatically after the quarter's last gameweek. Until then the Awards page shows running totals.</p>
+  </section>
+
+  <section class="panel faq">
+    <h2>Quick answers</h2>
+    <details><summary>Why is my gameweek score lower than what my players got?</summary><p>Your hit comes off. A -4 tag next to your score on the Standings page shows it.</p></details>
+    <details><summary>Why did someone with fewer points win Manager of the Week?</summary><p>Awards use the score after hits. A team that scored more but took a hit can finish below a team that made no extra transfers.</p></details>
+    <details><summary>Do hits matter in head-to-head?</summary><p>No. Head-to-head compares the points scored before any hit.</p></details>
+    <details><summary>When are the monthly and quarterly awards decided?</summary><p>Automatically, once the last gameweek of the month or quarter is over and FPL has confirmed the bonus points. That can be a few hours after the last match.</p></details>
+    <details><summary>What happens if two teams tie?</summary><p>They share the award. In the head-to-head table, ties on points are split by difference.</p></details>
+    <details><summary>What if someone is suspended from the league?</summary><p>They drop out of the standings and leaderboards from that gameweek onward. Their earlier gameweeks stay on record.</p></details>
+  </section>
+</main>
+
+<script>
+// opened inside the site's Guide page: use the dark look and drop the page title
+if (location.search.indexOf('embed') > -1) { document.documentElement.classList.add('embed'); document.documentElement.setAttribute('data-theme', 'dark'); }
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // tabs
+  var tabs = document.querySelectorAll('.tab');
+  function showTab(name) {
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === name)); });
+    ['standings', 'weekly', 'h2h', 'long'].forEach(function (n) { $('p-' + n).hidden = n !== name; });
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { showTab(t.dataset.tab); }); });
+  var start = (location.hash || '').slice(1);
+  if (['standings', 'weekly', 'h2h', 'long'].indexOf(start) > -1) showTab(start);
+
+  // hit calculator
+  function calc() {
+    var raw = +$('raw').value, hit = +$('hit').value;
+    $('rawOut').textContent = raw; $('hitOut').textContent = hit ? '-' + hit : '0';
+    $('netOut').textContent = raw - hit;
+    var tag = $('hitTag'); tag.textContent = hit ? '-' + hit + ' hit' : 'no hit'; tag.className = 'pill' + (hit ? ' hit' : '');
+  }
+  $('raw').addEventListener('input', calc); $('hit').addEventListener('input', calc); calc();
+
+  // weekly example
+  var week = [
+    { n: 'Team Alpha', raw: 71, hit: 8 }, { n: 'Team Bravo', raw: 66, hit: 0 }, { n: 'Team Charlie', raw: 59, hit: 4 },
+    { n: 'Team Delta', raw: 54, hit: 0 }, { n: 'Team Echo', raw: 47, hit: 0 }, { n: 'Team Foxtrot', raw: 51, hit: 8 }
+  ];
+  var countHits = true;
+  function renderWeek() {
+    var rows = week.map(function (t) { return { n: t.n, raw: t.raw, hit: t.hit, v: countHits ? t.raw - t.hit : t.raw }; })
+      .sort(function (a, b) { return b.v - a.v; });
+    var html = rows.map(function (r, i) {
+      var cls = i === 0 ? ' top' : i === rows.length - 1 ? ' bottom' : '';
+      var tag = i === 0 ? '<span class="tag g">MANAGER OF THE WEEK</span>' : i === rows.length - 1 ? '<span class="tag p">DONKEY</span>' : '';
+      var hit = r.hit ? ' <span class="pill hit">-' + r.hit + '</span>' : '';
+      return '<div class="item' + cls + '"><span class="pos">' + (i + 1) + '</span><span class="name">' + r.n + tag + hit + '</span><span class="val">' + r.v + '</span></div>';
+    }).join('');
+    $('weekList').innerHTML = html;
+    $('weekNote').textContent = countHits
+      ? 'Team Alpha scored the most raw points (71) but took an 8 point hit, so Team Bravo is Manager of the Week with 66.'
+      : 'Without hits Team Alpha would top the week. That is not how our league works.';
+    $('hitsOn').setAttribute('aria-pressed', String(countHits)); $('hitsOff').setAttribute('aria-pressed', String(!countHits));
+  }
+  $('hitsOn').addEventListener('click', function () { countHits = true; renderWeek(); });
+  $('hitsOff').addEventListener('click', function () { countHits = false; renderWeek(); });
+  renderWeek();
+
+  var awards = [
+    ['Hall of Fame', 'Score 100 or more points after hits in a gameweek without playing a chip.'],
+    ["Captain's Curse", 'Your captain scored the fewest points of anyone\'s captain that week.'],
+    ['Bench Bandit', 'The most points left sitting on your bench.'],
+    ['Transfer Villain', 'You took a hit and ended with the lowest score among the teams that took one.'],
+    ['The Wall / The Sieve', 'Best and worst combined goalkeeper and defender points in the week.'],
+    ['Midfield King / Flop', 'Best and worst combined midfielder points in the week.'],
+    ['Attack King / Flop', 'Best and worst combined forward points in the week.']
+  ];
+  $('awardCards').innerHTML = awards.map(function (a, i) {
+    return '<button type="button" class="card-btn" data-i="' + i + '" aria-pressed="' + (i === 0) + '">' + a[0] + '</button>';
+  }).join('');
+  function showAward(i) {
+    document.querySelectorAll('#awardCards .card-btn').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.i === i)); });
+    $('awardExplain').innerHTML = '<b>' + awards[i][0] + ':</b> ' + awards[i][1];
+  }
+  $('awardCards').addEventListener('click', function (e) { var b = e.target.closest('.card-btn'); if (b) showAward(+b.dataset.i); });
+  showAward(0);
+
+  // h2h match
+  function match() {
+    var a = +$('sa').value, b = +$('sb').value;
+    $('saOut').textContent = a; $('sbOut').textContent = b;
+    var ra = $('resA'), rb = $('resB');
+    if (a > b) { ra.textContent = 'Team A  +3'; ra.className = 'pill win'; rb.textContent = 'Team B  +0'; rb.className = 'pill lose'; }
+    else if (b > a) { rb.textContent = 'Team B  +3'; rb.className = 'pill win'; ra.textContent = 'Team A  +0'; ra.className = 'pill lose'; }
+    else { ra.textContent = 'Team A  +1'; rb.textContent = 'Team B  +1'; ra.className = 'pill draw'; rb.className = 'pill draw'; }
+  }
+  $('sa').addEventListener('input', match); $('sb').addEventListener('input', match); match();
+
+  // months (gameweek ranges as set for this season)
+  var months = [['August', 1, 3], ['September', 4, 7], ['October', 8, 10], ['November', 11, 13], ['December', 14, 17], ['January', 18, 21], ['February', 22, 25], ['March', 26, 29], ['April', 30, 34], ['May', 35, 38]];
+  $('monthChips').innerHTML = months.map(function (m, i) { return '<button type="button" class="chip" data-i="' + i + '" aria-pressed="' + (i === 3) + '">' + m[0] + '</button>'; }).join('');
+  function showMonth(i) {
+    document.querySelectorAll('#monthChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.i === i)); });
+    var m = months[i], n = m[2] - m[1] + 1;
+    $('monthExplain').innerHTML = '<b>' + m[0] + '</b> covers gameweeks <b>' + m[1] + ' to ' + m[2] + '</b> (' + n + ' gameweeks). Manager of the Month is the team with the highest combined score after hits over those gameweeks.';
+  }
+  $('monthChips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (b) showMonth(+b.dataset.i); });
+  showMonth(3);
+
+  // quarters + pitch
+  var quarters = [[1, 9], [10, 19], [20, 29], [30, 38]];
+  $('quarterChips').innerHTML = quarters.map(function (q, i) { return '<button type="button" class="chip" data-i="' + i + '" aria-pressed="' + (i === 0) + '">Quarter ' + (i + 1) + '</button>'; }).join('');
+  function showQuarter(i) {
+    document.querySelectorAll('#quarterChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.i === i)); });
+    $('quarterNote').textContent = 'Quarter ' + (i + 1) + ' runs from gameweek ' + quarters[i][0] + ' to ' + quarters[i][1] + '.';
+  }
+  $('quarterChips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (b) showQuarter(+b.dataset.i); });
+  showQuarter(0);
+
+  var zones = {
+    attack: ['Best Attack', 'Your forwards. The team whose starting forwards earned the most points over the quarter wins Best Attack.'],
+    midfield: ['Best Midfield', 'Your midfielders. The team whose starting midfielders earned the most points over the quarter wins Best Midfield.'],
+    defence: ['Best Defence', 'Your goalkeeper and defenders together. The team whose starting goalkeeper and defenders earned the most points over the quarter wins Best Defence.']
+  };
+  function showZone(z) {
+    document.querySelectorAll('.zone').forEach(function (g) { g.style.opacity = g.dataset.z === z ? '1' : '.55'; });
+    $('zoneExplain').innerHTML = '<b>' + zones[z][0] + ':</b> ' + zones[z][1];
+  }
+  document.querySelectorAll('.zone').forEach(function (g) { g.addEventListener('click', function () { showZone(g.dataset.z); }); });
+})();
+</script>
+
+</html>
