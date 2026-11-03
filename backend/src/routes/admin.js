@@ -53,8 +53,14 @@ adminRouter.post('/sync/:gw', asyncHandler(async (req, res) => {
 }));
 
 // One-off: re-sync every gameweek so far (after a calculation fix), then
-// redo the weekly awards and H2H results.
+// redo the weekly awards and H2H results. Runs in the background — it
+// takes longer than a web request is allowed to — and the Admin page
+// checks /resync-status to show progress.
+const resync = { running: false, current: 0, through: 0, startedAt: null, finishedAt: null, error: null, mismatches: [] };
+
 adminRouter.post('/resync-all', asyncHandler(async (_req, res) => {
+  if (resync.running) return res.json({ started: false, message: 'Already running', ...resync });
+
   const bootstrap = await fetchBootstrap({ forceRefresh: true });
   const current = currentEventId(bootstrap);
   if (!current) return res.status(400).json({ error: 'Could not determine current gameweek' });
@@ -62,15 +68,30 @@ adminRouter.post('/resync-all', asyncHandler(async (_req, res) => {
   const settings = await query('SELECT value FROM league_settings WHERE key = $1', ['fpl_league_id']);
   const leagueId = settings.rows[0].value;
 
-  const done = [];
-  for (let gw = 1; gw <= current; gw++) {
-    const syncResult = await syncGameweek(leagueId, gw);
-    await recomputeGameweekAwards(gw);
-    await settleH2H(gw);
-    done.push({ gw, managersSynced: syncResult.managersSynced });
-  }
-  res.json({ resynced: done.length, through: current, done });
+  Object.assign(resync, { running: true, current: 0, through: current, startedAt: Date.now(), finishedAt: null, error: null, mismatches: [] });
+
+  (async () => {
+    try {
+      for (let gw = 1; gw <= current; gw++) {
+        const syncResult = await syncGameweek(leagueId, gw);
+        await recomputeGameweekAwards(gw);
+        await settleH2H(gw);
+        if (syncResult.mismatches?.length) resync.mismatches = syncResult.mismatches;
+        resync.current = gw;
+      }
+    } catch (err) {
+      console.error('[resync-all] failed:', err);
+      resync.error = err.message;
+    } finally {
+      resync.running = false;
+      resync.finishedAt = Date.now();
+    }
+  })();
+
+  res.json({ started: true, through: current });
 }));
+
+adminRouter.get('/resync-status', (_req, res) => res.json(resync));
 
 adminRouter.post('/awards/quarterly/:quarter', asyncHandler(async (req, res) => {
   const result = await recomputeQuarterlyAwards(Number(req.params.quarter));

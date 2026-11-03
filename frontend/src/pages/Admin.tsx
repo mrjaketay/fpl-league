@@ -122,6 +122,36 @@ export default function Admin() {
     setLog((l) => [`${new Date().toLocaleTimeString()} — ${msg}`, ...l]);
   }
 
+  // starts (or picks up) the background re-sync and logs each gameweek as it finishes
+  const [resyncing, setResyncing] = useState(false);
+  async function resyncAllGameweeks() {
+    setResyncing(true);
+    appendLog('Re-sync all gameweeks…');
+    try {
+      const start = await api.resyncAll();
+      if (start.started === false) appendLog('Already running — following it');
+      let lastShown = 0;
+      // poll until the server says it's done
+      while (true) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const st = await api.resyncStatus();
+        if (st.current > lastShown) {
+          for (let g = lastShown + 1; g <= st.current; g++) appendLog(`✓ GW${g} of ${st.through} synced`);
+          lastShown = st.current;
+        }
+        if (!st.running) {
+          if (st.error) appendLog(`✗ Re-sync stopped at GW${st.current + 1}: ${st.error}`);
+          else appendLog(`✓ Re-sync finished — ${st.through} gameweeks${st.mismatches?.length ? `, ${st.mismatches.length} total mismatch(es): ${JSON.stringify(st.mismatches)}` : ', totals match FPL table'}`);
+          break;
+        }
+      }
+    } catch (err: any) {
+      appendLog(`✗ Re-sync failed: ${err.message}`);
+    } finally {
+      setResyncing(false);
+    }
+  }
+
   async function run(label: string, fn: () => Promise<any>) {
     appendLog(`${label}…`);
     try {
@@ -250,7 +280,7 @@ export default function Admin() {
                   Re-pulls every gameweek so far and redoes the weekly awards and H2H results. Use it once after a
                   calculation fix. It can take a minute or two.
                 </p>
-                <button className="btn btn--ghost" onClick={() => run('Re-sync all gameweeks', api.resyncAll)}>Re-sync All Gameweeks</button>
+                <button className="btn btn--ghost" disabled={resyncing} onClick={resyncAllGameweeks}>{resyncing ? 'Re-syncing…' : 'Re-sync All Gameweeks'}</button>
               </div>
             </div>
           )}
