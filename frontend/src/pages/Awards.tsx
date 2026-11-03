@@ -60,6 +60,7 @@ export default function Awards() {
   const [quarter, setQuarter] = useState(1);
   const [showQuarterFlyer, setShowQuarterFlyer] = useState(false);
   const [quarterWinners, setQuarterWinners] = useState<Award[] | null>(null);
+  const [quarterBoard, setQuarterBoard] = useState<any>(null);
 
   useEffect(() => {
     setError(null);
@@ -73,7 +74,9 @@ export default function Awards() {
 
   useEffect(() => {
     setQuarterWinners(null);
+    setQuarterBoard(null);
     api.quarterlyAwards(quarter).then(setQuarterWinners).catch(() => setQuarterWinners([]));
+    api.quarterlyLeaderboard(quarter).then(setQuarterBoard).catch(() => setQuarterBoard({ defense: [], midfield: [], attack: [] }));
   }, [quarter]);
 
   const motwList = awards.filter((a) => a.award_type === 'manager_of_week');
@@ -180,43 +183,57 @@ export default function Awards() {
           </div>
         </div>
 
-        {quarterWinners === null ? (
-          <div className="three-col">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="stat-tile" style={{ display: 'grid', gap: '0.4rem' }}>
-                <Skeleton height={14} width="70%" />
-                <Skeleton height={18} width="50%" />
-                <Skeleton height={12} width="40%" />
-              </div>
-            ))}
-          </div>
-        ) : quarterWinners.length === 0 ? (
-          <p style={{ color: 'var(--grey)' }}>Quarter {quarter} hasn't been locked in yet. It locks automatically once its last gameweek is over.</p>
-        ) : (
-          <div className="three-col">
-            {[
-              { type: 'quarterly_defense', label: 'Best Defence', kind: 'defense' as AwardKind },
-              { type: 'quarterly_midfield', label: 'Best Midfield', kind: 'midfield' as AwardKind },
-              { type: 'quarterly_attack', label: 'Best Attack', kind: 'attack' as AwardKind },
-            ].map((c, i) => {
-              const list = quarterWinners.filter((w) => w.award_type === c.type);
-              return (
-                <div key={c.type} className="stat-tile row-in" style={{ animationDelay: `${i * 0.04}s` }}>
-                  <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <AwardIcon kind={c.kind} size={15} /> {list.length > 1 ? `Joint ${c.label}` : c.label}
-                  </span>
-                  <span className="value" style={{ fontSize: '1.05rem' }}>{list.length ? namesList(list) : '—'}</span>
-                  {list.length > 0 && (
-                    <>
-                      <span style={{ color: 'var(--grey)', fontSize: '0.8rem' }}>{list.map((w) => w.manager_name).join(' & ')}</span>
-                      <span className="mono" style={{ color: 'var(--green)', fontSize: '0.85rem' }}>{list[0].value} pts</span>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+        {quarterBoard && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
+            {quarterWinners && quarterWinners.length > 0
+              ? <span className="pill pill--green">Locked in</span>
+              : <span className="pill pill--outline">Not locked yet</span>}
+            {quarterBoard.from && (
+              <span style={{ color: 'var(--grey)', fontSize: '0.82rem' }}>
+                GW{quarterBoard.from}–{quarterBoard.to}{quarterWinners && quarterWinners.length > 0 ? '' : ' · running totals, locks automatically after the last gameweek'}
+              </span>
+            )}
           </div>
         )}
+
+        <div className="three-col">
+          {[
+            { key: 'defense', type: 'quarterly_defense', label: 'Best Defence', kind: 'defense' as AwardKind },
+            { key: 'midfield', type: 'quarterly_midfield', label: 'Best Midfield', kind: 'midfield' as AwardKind },
+            { key: 'attack', type: 'quarterly_attack', label: 'Best Attack', kind: 'attack' as AwardKind },
+          ].map((c) => {
+            const list = (quarterBoard?.[c.key] ?? []).slice(0, 5);
+            const locked = quarterWinners?.filter((w) => w.award_type === c.type) ?? [];
+            const lockedIds = new Set(locked.map((w) => w.entry_id));
+            return (
+              <div key={c.key} className="stat-tile" style={{ alignItems: 'stretch' }}>
+                <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <AwardIcon kind={c.kind} size={15} /> {locked.length > 1 ? `Joint ${c.label}` : c.label}
+                </span>
+                {quarterBoard === null ? (
+                  <div style={{ display: 'grid', gap: '0.3rem', marginTop: '0.4rem' }}>
+                    {[0, 1, 2].map((i) => <Skeleton key={i} height={12} width={`${65 - i * 10}%`} />)}
+                  </div>
+                ) : list.length === 0 ? (
+                  <span style={{ color: 'var(--grey)', fontSize: '0.85rem' }}>No data yet</span>
+                ) : (
+                  <div style={{ display: 'grid', gap: '0.3rem', marginTop: '0.4rem' }}>
+                    {list.map((m: any, i: number) => {
+                      // once locked the locked winner(s) are highlighted, before that the current leader
+                      const winner = locked.length > 0 ? lockedIds.has(m.entry_id) : i === 0;
+                      return (
+                        <div key={m.entry_id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.82rem' }}>
+                          <span style={{ color: winner ? 'var(--green)' : 'var(--white)', fontWeight: winner ? 700 : 400 }}>{i + 1}. {m.team_name}</span>
+                          <span className="mono" style={{ color: winner ? 'var(--green)' : 'var(--grey)' }}>{m.total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="card fade-in">
