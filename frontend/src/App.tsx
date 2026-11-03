@@ -7,7 +7,7 @@ import H2H from './pages/H2H';
 import LeagueStats from './pages/LeagueStats';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
-import { api } from './api/client';
+import { api, startSessionWatch } from './api/client';
 import LeagueLogo from './components/LeagueLogo';
 import BackgroundArt from './components/BackgroundArt';
 import BackToTop from './components/BackToTop';
@@ -38,6 +38,10 @@ export default function App() {
   // it takes the whole viewport, so I skip my usual header/width
   // constraints specifically for this route.
   const isAdmin = location.pathname.startsWith('/admin') || location.pathname === '/login';
+
+  useEffect(() => {
+    startSessionWatch();
+  }, []);
 
   useEffect(() => {
     api.info().then((d) => setLeagueName(d.name)).catch(() => {});

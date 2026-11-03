@@ -330,8 +330,8 @@ leagueRouter.get('/h2h/gameweek/:gw', asyncHandler(async (req, res) => {
     `SELECT f.*, m1.manager_name AS manager_1_name, m1.team_name AS team_1_name,
             m2.manager_name AS manager_2_name, m2.team_name AS team_2_name,
             w.manager_name AS winner_name,
-            CASE WHEN f.settled_at IS NOT NULL THEN gs1.gw_points_net END AS team_1_points,
-            CASE WHEN f.settled_at IS NOT NULL THEN gs2.gw_points_net END AS team_2_points
+            CASE WHEN f.settled_at IS NOT NULL THEN gs1.gw_points_raw END AS team_1_points,
+            CASE WHEN f.settled_at IS NOT NULL THEN gs2.gw_points_raw END AS team_2_points
      FROM h2h_fixtures f
      JOIN managers m1 ON m1.entry_id = f.entry_id_1
      JOIN managers m2 ON m2.entry_id = f.entry_id_2
@@ -364,7 +364,7 @@ leagueRouter.get('/h2h/table', asyncHandler(async (_req, res) => {
     ),
     with_points AS (
       SELECT r.entry_id, r.winner_entry_id,
-             gs_for.gw_points_net AS points_for, gs_against.gw_points_net AS points_against
+             gs_for.gw_points_raw AS points_for, gs_against.gw_points_raw AS points_against
       FROM results r
       JOIN gameweek_stats gs_for ON gs_for.entry_id = r.entry_id AND gs_for.gameweek = r.gameweek
       JOIN gameweek_stats gs_against ON gs_against.entry_id = r.opponent_id AND gs_against.gameweek = r.gameweek

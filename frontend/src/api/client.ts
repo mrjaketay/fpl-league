@@ -15,6 +15,11 @@ async function request(path: string, options: RequestInit = {}) {
     },
   });
   if (!res.ok) {
+    // token expired or was rejected while logged in: log out and go to login
+    if (res.status === 401 && token) {
+      clearToken();
+      window.location.href = '/login';
+    }
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
   }
@@ -75,12 +80,58 @@ export const api = {
     request('/api/admin/h2h/regenerate', { method: 'POST', body: JSON.stringify({ startGameweek, totalGameweeks }) }),
 };
 
+// Admin session: the token itself expires after 2 hours (set on the
+// server) and I'm also logged out after 15 minutes without any activity.
+const IDLE_LIMIT_MS = 15 * 60 * 1000;
+
+function tokenExpired(token: string) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return !payload.exp || payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
+function lastActive() {
+  return Number(localStorage.getItem('admin_last_active') || 0);
+}
+
 export function setToken(token: string) {
   localStorage.setItem('admin_token', token);
+  localStorage.setItem('admin_last_active', String(Date.now()));
 }
 export function clearToken() {
   localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_last_active');
 }
 export function isLoggedIn() {
-  return !!getToken();
+  const token = getToken();
+  if (!token) return false;
+  if (tokenExpired(token) || Date.now() - lastActive() > IDLE_LIMIT_MS) {
+    clearToken();
+    return false;
+  }
+  return true;
+}
+
+// Call once at startup. Keeps the activity time fresh while I'm using the
+// site and logs me out (back to login) once the limits above are hit.
+let watching = false;
+export function startSessionWatch() {
+  if (watching) return;
+  watching = true;
+  let lastWrite = 0;
+  const touch = () => {
+    const now = Date.now();
+    if (now - lastWrite < 5000 || !getToken()) return;
+    lastWrite = now;
+    localStorage.setItem('admin_last_active', String(now));
+  };
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach((ev) => window.addEventListener(ev, touch, { passive: true }));
+  setInterval(() => {
+    if (getToken() && !isLoggedIn()) {
+      window.location.href = window.location.pathname.startsWith('/admin') ? '/login' : window.location.pathname;
+    }
+  }, 30000);
 }

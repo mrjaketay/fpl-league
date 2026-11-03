@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api/client';
+import { api, isLoggedIn } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import AwardIcon, { AwardKind } from '../components/AwardIcon';
 import Skeleton from '../components/Skeleton';
@@ -172,9 +172,11 @@ export default function Awards() {
             <select className="gw-select" value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
               {[1, 2, 3, 4].map((q) => <option key={q} value={q}>Quarter {q}</option>)}
             </select>
-            <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowQuarterFlyer(true)}>
-              <IconSparkles size={14} /> Flyer
-            </button>
+            {isLoggedIn() && (
+              <button className="btn btn--primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => setShowQuarterFlyer(true)}>
+                <IconSparkles size={14} /> Flyer
+              </button>
+            )}
           </div>
         </div>
 

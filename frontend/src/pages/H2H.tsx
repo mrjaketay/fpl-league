@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../api/client';
+import { api, isLoggedIn } from '../api/client';
 import GameweekSelect from '../components/GameweekSelect';
 import FlyerModal from '../components/FlyerModal';
 import { IconDownload, IconSparkles } from '../components/AwardIcon';
@@ -65,7 +65,7 @@ export default function H2H() {
             <span className="field-label">Gameweek</span>
             <GameweekSelect value={gw} onChange={setGw} />
           </div>
-          {fixtures.length > 0 && (
+          {fixtures.length > 0 && isLoggedIn() && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button className="btn btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} disabled={downloading} onClick={downloadFixturesFlyer}>
                 {downloading ? 'Preparing…' : <><IconDownload size={14} /> Download as image</>}

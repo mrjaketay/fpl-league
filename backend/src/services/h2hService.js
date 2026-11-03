@@ -59,13 +59,14 @@ export async function settleH2H(gameweek) {
   const { rows: fixtures } = await query('SELECT * FROM h2h_fixtures WHERE gameweek = $1', [gameweek]);
   let settled = 0;
   for (const f of fixtures) {
+    // H2H goes on points before any transfer hit
     const { rows } = await query(
-      'SELECT entry_id, gw_points_net FROM gameweek_stats WHERE gameweek = $1 AND entry_id IN ($2,$3)',
+      'SELECT entry_id, gw_points_raw FROM gameweek_stats WHERE gameweek = $1 AND entry_id IN ($2,$3)',
       [gameweek, f.entry_id_1, f.entry_id_2]
     );
     if (rows.length < 2) continue; // one or both not synced yet
     const [p1, p2] = rows;
-    const winner = p1.gw_points_net === p2.gw_points_net ? null : p1.gw_points_net > p2.gw_points_net ? p1.entry_id : p2.entry_id;
+    const winner = p1.gw_points_raw === p2.gw_points_raw ? null : p1.gw_points_raw > p2.gw_points_raw ? p1.entry_id : p2.entry_id;
     await query('UPDATE h2h_fixtures SET winner_entry_id = $1, settled_at = now() WHERE id = $2', [winner, f.id]);
     settled += 1;
   }

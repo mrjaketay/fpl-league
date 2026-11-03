@@ -134,9 +134,14 @@ export async function syncGameweek(leagueId, gameweek) {
       const netPoints = prevTotal != null ? hist.total_points - prevTotal : hist.points - hist.event_transfers_cost;
       const rawPoints = netPoints + hist.event_transfers_cost;
 
-      // for the current gameweek, FPL's own league table total should match ours
-      if (isCurrent && manager.total != null && manager.total !== hist.total_points) {
-        mismatches.push({ entry: manager.entry, ours: hist.total_points, league_table: manager.total });
+      // for the current gameweek, use FPL's own league table total so the
+      // standings match the site exactly (picks can lag behind it)
+      let totalAfter = hist.total_points;
+      if (isCurrent && manager.total != null) {
+        if (manager.total !== hist.total_points) {
+          mismatches.push({ entry: manager.entry, picks_total: hist.total_points, league_table: manager.total });
+        }
+        totalAfter = manager.total;
       }
 
       await query(
@@ -163,7 +168,7 @@ export async function syncGameweek(leagueId, gameweek) {
           viceCaptainPick?.element ?? null,
           CHIP_MAP[picksData.active_chip] ?? null,
           hist.overall_rank,
-          hist.total_points,
+          totalAfter,
           posSums.gk_def,
           posSums.mid,
           posSums.fwd,
