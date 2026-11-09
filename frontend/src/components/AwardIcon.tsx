@@ -274,6 +274,23 @@ export function IconMenu({ size = 18 }: IconProps) {
   );
 }
 
+export function IconCopy({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+    </svg>
+  );
+}
+
+export function IconCheck({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
 export function IconDownload({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} {...base}>

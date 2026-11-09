@@ -99,13 +99,19 @@ export async function syncGameweek(leagueId, gameweek) {
   const live = await fetchEventLive(gameweek);
   const isCurrent = currentEventId(bootstrap) === gameweek;
 
+  const startedAt = Date.now();
+  const event = bootstrap.events.find((e) => e.id === gameweek);
   let synced = 0;
   const mismatches = [];
+  const failed = [];
+  const skipped = [];
+  const hits = [];
+  const totals = { picks_behind_table: 0, picks_ahead_of_table: 0, equal: 0 };
   for (const manager of results) {
     try {
       const picksData = await fetchEntryPicks(manager.entry, gameweek);
       const hist = picksData.entry_history;
-      if (!hist) continue; // gameweek not played yet for this entry
+      if (!hist) { skipped.push(manager.entry); continue; } // gameweek not played yet for this entry
 
       const captainPick = picksData.picks.find((p) => p.is_captain);
       const viceCaptainPick = picksData.picks.find((p) => p.is_vice_captain);
@@ -131,18 +137,30 @@ export async function syncGameweek(leagueId, gameweek) {
         );
         prevTotal = prevRows[0]?.total_points_after ?? null;
       }
-      const netPoints = prevTotal != null ? hist.total_points - prevTotal : hist.points - hist.event_transfers_cost;
-      const rawPoints = netPoints + hist.event_transfers_cost;
-
-      // for the current gameweek, use FPL's own league table total so the
-      // standings match the site exactly (picks can lag behind it)
+      // Running total after this gameweek. For the current gameweek FPL's
+      // league table and the picks can disagree (one lags the other), so I
+      // take the higher of the two. A late gameweek only ever adds points.
       let totalAfter = hist.total_points;
       if (isCurrent && manager.total != null) {
+        if (manager.total > hist.total_points) totals.picks_behind_table += 1;
+        else if (manager.total < hist.total_points) totals.picks_ahead_of_table += 1;
+        else totals.equal += 1;
         if (manager.total !== hist.total_points) {
-          mismatches.push({ entry: manager.entry, picks_total: hist.total_points, league_table: manager.total });
+          mismatches.push({
+            entry: manager.entry,
+            team: manager.entry_name,
+            picks_total: hist.total_points,
+            league_table: manager.total,
+            difference: manager.total - hist.total_points,
+          });
         }
-        totalAfter = manager.total;
+        totalAfter = Math.max(hist.total_points, manager.total);
       }
+
+      // Gameweek score after the hit = this total minus last week's.
+      const netPoints = prevTotal != null ? totalAfter - prevTotal : hist.points - hist.event_transfers_cost;
+      const rawPoints = netPoints + hist.event_transfers_cost;
+      if (hist.event_transfers_cost > 0) hits.push({ entry: manager.entry, team: manager.entry_name, cost: hist.event_transfers_cost });
 
       await query(
         `INSERT INTO gameweek_stats (
@@ -177,7 +195,27 @@ export async function syncGameweek(leagueId, gameweek) {
       synced += 1;
     } catch (err) {
       console.error(`Failed syncing entry ${manager.entry} GW${gameweek}:`, err.message);
+      failed.push({ entry: manager.entry, team: manager.entry_name, error: err.message });
     }
   }
-  return { gameweek, managersSynced: synced, mismatches };
+  return {
+    gameweek,
+    isCurrent,
+    event: event && {
+      is_current: event.is_current,
+      is_next: event.is_next,
+      finished: event.finished,
+      data_checked: event.data_checked,
+      deadline_time: event.deadline_time,
+    },
+    managersInLeague: results.length,
+    managersSynced: synced,
+    skippedNoData: skipped,
+    failed,
+    totalsCheck: isCurrent ? totals : 'n/a (not the current gameweek)',
+    mismatches,
+    hits,
+    durationMs: Date.now() - startedAt,
+    finishedAt: new Date().toISOString(),
+  };
 }

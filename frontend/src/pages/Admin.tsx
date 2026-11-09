@@ -6,6 +6,8 @@ import GameweekSelect from '../components/GameweekSelect';
 import {
   IconRefresh, IconSwords, IconUsers, IconTrophy, IconSettings, IconImage,
   IconSave, IconLogOut, IconCrown, IconAlertTriangle, IconMenu,
+  IconCopy,
+  IconCheck,
 } from '../components/AwardIcon';
 
 type QuarterRange = [number, number];
@@ -118,6 +120,25 @@ export default function Admin() {
 
   if (!isLoggedIn()) return <Navigate to="/login" />;
 
+  // copies the whole log, oldest first, so it reads in the order things happened
+  const [copied, setCopied] = useState(false);
+  async function copyLog() {
+    const text = [...log].reverse().join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // older browsers: select a hidden textarea and copy
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
   function appendLog(msg: string) {
     setLog((l) => [`${new Date().toLocaleTimeString()} — ${msg}`, ...l]);
   }
@@ -156,7 +177,7 @@ export default function Admin() {
     appendLog(`${label}…`);
     try {
       const result = await fn();
-      appendLog(`✓ ${label}: ${JSON.stringify(result)}`);
+      appendLog(`✓ ${label}:\n${JSON.stringify(result, null, 2)}`);
     } catch (err: any) {
       appendLog(`✗ ${label} failed: ${err.message}`);
     }
@@ -587,10 +608,16 @@ export default function Admin() {
           )}
 
           <div className="card fade-in">
-            <h2 style={{ fontSize: '1.05rem', marginBottom: '1rem' }}>Activity Log</h2>
-            <div className="mono" style={{ fontSize: '0.78rem', display: 'grid', gap: '0.3rem', maxHeight: 220, overflowY: 'auto', color: 'var(--grey)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
+              <h2 style={{ fontSize: '1.05rem', margin: 0 }}>Activity Log</h2>
+              <button className="btn btn--ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.7rem' }}
+                disabled={log.length === 0}  onClick={copyLog}>
+                {copied ? <><IconCheck size={14} /> Copied</> : <><IconCopy size={14} /> Copy</>}
+              </button>
+            </div>
+            <div className="mono" style={{ fontSize: '0.78rem', display: 'grid', gap: '0.3rem', maxHeight: 360, overflowY: 'auto', color: 'var(--grey)' }}>
               {log.length === 0 && <span>Nothing run yet this session.</span>}
-              {log.map((l, i) => <div key={i}>{l}</div>)}
+              {log.map((l, i) => <div key={i} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{l}</div>)}
             </div>
           </div>
         </div>
