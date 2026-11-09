@@ -5,6 +5,7 @@ import AwardIcon, { AwardKind } from '../components/AwardIcon';
 import Skeleton from '../components/Skeleton';
 import QuarterFlyerModal from '../components/QuarterFlyerModal';
 import { IconSparkles } from '../components/AwardIcon';
+import Foldable from '../components/Foldable';
 
 type Tone = 'green' | 'red';
 
@@ -121,6 +122,7 @@ export default function Awards() {
       )}
 
       {!gwLoading && (motwList.length > 0 || dotwList.length > 0) && (
+        <Foldable id="awards-headline" title="MANAGER & DONKEY OF THE WEEK" className="fade-in">
         <div className="two-col-even">
           {motwList.length > 0 && (
             <div className="card card--hero fade-in fade-in-1" style={{ height: '100%' }}>
@@ -141,11 +143,11 @@ export default function Awards() {
             </div>
           )}
         </div>
+        </Foldable>
       )}
 
       {!gwLoading && restTypes.length > 0 && (
-        <div className="card fade-in fade-in-3">
-          <div className="section-heading">OTHER AWARDS THIS WEEK</div>
+        <Foldable id="awards-other" title="OTHER AWARDS THIS WEEK" className="card fade-in fade-in-3">
           <div className="awards-list">
             {restTypes.map((type, i) => {
               const winners = awards.filter((a) => a.award_type === type);
@@ -165,12 +167,10 @@ export default function Awards() {
               );
             })}
           </div>
-        </div>
+        </Foldable>
       )}
 
-      <div className="card fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-          <div className="section-heading" style={{ marginBottom: 0 }}>QUARTERLY WINNERS</div>
+      <Foldable id="awards-quarterly" title="QUARTERLY WINNERS" actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <select className="gw-select" value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
               {[1, 2, 3, 4].map((q) => <option key={q} value={q}>Quarter {q}</option>)}
@@ -181,8 +181,7 @@ export default function Awards() {
               </button>
             )}
           </div>
-        </div>
-
+      }>
         {quarterBoard && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
             {quarterWinners && quarterWinners.length > 0
@@ -234,18 +233,16 @@ export default function Awards() {
             );
           })}
         </div>
-      </div>
+      </Foldable>
 
-      <div className="card fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-          <div className="section-heading" style={{ marginBottom: 0 }}>TROPHY CABINET</div>
+      <Foldable id="awards-trophies" title="TROPHY CABINET" actions={
           <select className="gw-select" value={trophyFilter} onChange={(e) => setTrophyFilter(e.target.value)}>
             <option value="leaders">Leaderboard (top per award)</option>
             {trophyTypes.map((t) => (
               <option key={t} value={t}>{LABELS[t]?.label ?? t}</option>
             ))}
           </select>
-        </div>
+      }>
 
         {tallyLoading ? (
           <div className="three-col">
@@ -290,7 +287,7 @@ export default function Awards() {
             </tbody>
           </table></div>
         )}
-      </div>
+      </Foldable>
 
       {showQuarterFlyer && <QuarterFlyerModal quarter={quarter} onClose={() => setShowQuarterFlyer(false)} />}
     </div>

@@ -22,7 +22,8 @@ export async function recomputeGameweekAwards(gameweek) {
   const { rows: stats } = await query(
     `SELECT gs.*, m.manager_name, m.team_name
      FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
-     WHERE gameweek = $1`,
+     WHERE gs.gameweek = $1
+       AND (m.suspended_from_gameweek IS NULL OR $1 < m.suspended_from_gameweek)`,
     [gameweek]
   );
   if (stats.length === 0) return { gameweek, computed: 0 };
@@ -154,13 +155,14 @@ export async function recomputeQuarterlyAwards(quarter) {
   const [from, to] = boundaries[quarter - 1];
 
   const { rows } = await query(
-    `SELECT entry_id,
-            SUM(gk_def_points) AS defense_total,
-            SUM(mid_points) AS midfield_total,
-            SUM(fwd_points) AS attack_total
-     FROM gameweek_stats
-     WHERE gameweek BETWEEN $1 AND $2
-     GROUP BY entry_id`,
+    `SELECT gs.entry_id,
+            SUM(gs.gk_def_points) AS defense_total,
+            SUM(gs.mid_points) AS midfield_total,
+            SUM(gs.fwd_points) AS attack_total
+     FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+     WHERE gs.gameweek BETWEEN $1 AND $2
+       AND (m.suspended_from_gameweek IS NULL OR $2 < m.suspended_from_gameweek)
+     GROUP BY gs.entry_id`,
     [from, to]
   );
   if (rows.length === 0) return { quarter, computed: 0 };
@@ -196,10 +198,11 @@ export async function recomputeMonthlyAward(monthIndex) {
   const [name, from, to] = mapping[monthIndex - 1];
 
   const { rows } = await query(
-    `SELECT entry_id, SUM(gw_points_net) AS total
-     FROM gameweek_stats
-     WHERE gameweek BETWEEN $1 AND $2
-     GROUP BY entry_id`,
+    `SELECT gs.entry_id, SUM(gs.gw_points_net) AS total
+     FROM gameweek_stats gs JOIN managers m ON m.entry_id = gs.entry_id
+     WHERE gs.gameweek BETWEEN $1 AND $2
+       AND (m.suspended_from_gameweek IS NULL OR $2 < m.suspended_from_gameweek)
+     GROUP BY gs.entry_id`,
     [from, to]
   );
   if (rows.length === 0) return { month: monthIndex, name, computed: 0 };
